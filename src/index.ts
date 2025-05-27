@@ -36,7 +36,7 @@ const swaggerOptions = {
   apis: ['./src/routes/*.js', './src/routes/*.ts', './src/controllers/*.ts'],
 };
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 
 app.use(express.json());

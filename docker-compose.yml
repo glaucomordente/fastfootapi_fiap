@@ -1,39 +1,43 @@
 version: '3.8'
 services:
-  fastfood-api:
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3000"
-    depends_on:
-      - db
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=fastfood_db
-    networks:
-      - food-network
-  db:
-    platform: linux/amd64
+  postgres:
     image: postgres:15-alpine
+    container_name: postgres
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=fastfood_db
-    volumes:
-      - db-data:/var/lib/postgresql/data
+      POSTGRES_DB: fastfood_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     networks:
-      - food-network
+      - fastfootnet
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: fastfootapi
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: fastfood_db
+    ports:
+      - "3000:3000"
+    networks:
+      - fastfootnet
+    command: ["npm", "start"]
+
 volumes:
   db-data:
+
 networks:
-  food-network:
+  fastfootnet:
     driver: bridge
