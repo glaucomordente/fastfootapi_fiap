@@ -1,32 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { CategoryEntity } from '../../../../../categories/adapters/out/persistence/entities/Category.entity';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { CategoryEntity } from '../../categories/adapters/out/persistence/entities/Category.entity'; // Adjust path if needed
 
-/**
- * Product Entity for TypeORM
- * 
- * This is the TypeORM entity that maps to the 'products' table in the database.
- */
-@Entity('products')
+@Entity('produtos') // Nome da tabela no banco de dados
 export class ProductEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn('uuid') // Changed to UUID
+  id: string;
 
-  @Column({ length: 100, nullable: false })
-  name: string;
+  @Column({ length: 100 })
+  nome: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  descricao: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-  price: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  preco: number;
 
-  @Column({ name: 'image_url', type: 'text', nullable: true })
-  imageUrl: string | null;
+  @Column({ length: 255, nullable: true, name: 'imagem_url' })
+  imagemUrl: string;
+
+  @Column({ type: 'boolean', default: true })
+  disponivel: boolean; // Added field based on contract
+
+  @Column({ type: 'boolean', default: false })
+  destaque: boolean; // Added field based on contract
 
   @Column({ name: 'category_id' })
-  categoryId: number;
+  categoryId: number; // Keep relation ID
 
-  @Column({ name: 'stock', type: 'int', default: 0 })
+  @ManyToOne(() => CategoryEntity, category => category.products, { eager: true }) // Eager load category to get name easily
+  @JoinColumn({ name: 'category_id' })
+  categoria: CategoryEntity; // Relation to get category name
+
+  // Stock might still be relevant internally, even if not in API response
+  @Column({ type: 'int', default: 0 })
   stock: number;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -34,8 +40,5 @@ export class ProductEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @ManyToOne(() => CategoryEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'category_id' })
-  category: CategoryEntity;
 }
+

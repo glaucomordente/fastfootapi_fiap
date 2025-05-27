@@ -1,39 +1,40 @@
 version: '3.8'
+
 services:
-  fastfood-api:
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3000"
-    depends_on:
-      - db
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=fastfood_db
-    networks:
-      - food-network
   db:
-    platform: linux/amd64
-    image: postgres:15-alpine
+    image: postgres:14-alpine # Use a specific version
+    container_name: fastfood_db_fiap
+    restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=fastfood_db
-    volumes:
-      - db-data:/var/lib/postgresql/data
+      POSTGRES_DB: ${DB_NAME:-fastfood_db} # Use environment variable from .env or default
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
-    networks:
-      - food-network
+      - "${DB_PORT:-5432}:5432" # Map host port from .env or default to container port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist data
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-fastfood_db}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+  app:
+    build: .
+    container_name: fastfood_app_fiap
+    restart: always
+    env_file:
+      - .env # Load environment variables from .env file
+    ports:
+      - "${PORT:-3000}:3000" # Map host port from .env or default to container port
+    depends_on:
+      db:
+        condition: service_healthy # Wait for db to be healthy
+    # Add volumes if needed for development (e.g., mapping src for hot-reloading)
+    # volumes:
+    #   - ./src:/app/src
+    #   - ./logs:/app/logs # Map logs directory
+
 volumes:
-  db-data:
-networks:
-  food-network:
-    driver: bridge
+  postgres_data: # Define the named volume
+

@@ -1,52 +1,72 @@
-import { Product, ProductDTO } from '../../entities/Product';
+import { Product } from '../../domain/entities/Product';
+import { ProdutoListagemDTO } from '../../domain/ports/out/ProductRepository'; // Import the DTO
+
+// Define the structure for creating/updating products, aligning with domain entity
+// Using Partial for update
+export type ProductUpdatePayload = Partial<{
+  name: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  categoryId: number;
+  stock: number;
+  disponivel: boolean;
+  destaque: boolean;
+}>;
+
+// Define the structure for creating products
+export type ProductCreatePayload = {
+  name: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  categoryId: number;
+  stock?: number; // Optional stock
+  disponivel?: boolean; // Optional
+  destaque?: boolean; // Optional
+};
+
 
 /**
  * ProductUseCase Interface (Input Port)
- * 
- * This interface defines the operations that can be performed on products.
- * It serves as the primary input port for the hexagonal architecture.
- * Application services will implement this interface to provide the actual business logic.
+ *
+ * Defines operations for products, aligning with API contracts.
  */
 export interface ProductUseCase {
   /**
-   * Get all products
-   * @returns Promise resolving to an array of ProductDTO objects
+   * List products, optionally filtered by category name.
+   * @param categoryName Optional category name filter.
+   * @returns Promise resolving to an array of products formatted for the API list response.
    */
-  getAllProducts(): Promise<ProductDTO[]>;
-  
+  listarProdutos(categoryName?: string): Promise<{ produtos: ProdutoListagemDTO[]; timestamp: string }>;
+
   /**
-   * Get a product by its ID
-   * @param id The ID of the product to retrieve
-   * @returns Promise resolving to a ProductDTO or null if not found
+   * Get a product by its ID (UUID).
+   * @param id The UUID of the product.
+   * @returns Promise resolving to a Product domain entity or null.
    */
-  getProductById(id: number): Promise<ProductDTO | null>;
-  
+  getProductById(id: string): Promise<Product | null>; // Keep internal method if needed
+
   /**
-   * Get products by category ID
-   * @param categoryId The ID of the category to filter by
-   * @returns Promise resolving to an array of ProductDTO objects
+   * Create a new product.
+   * @param productData Data for the new product.
+   * @returns Promise resolving to the created Product domain entity.
    */
-  getProductsByCategory(categoryId: number): Promise<ProductDTO[]>;
-  
+  createProduct(productData: ProductCreatePayload): Promise<Product>;
+
   /**
-   * Create a new product
-   * @param productData The data for the new product
-   * @returns Promise resolving to the created ProductDTO
+   * Update an existing product.
+   * @param id The UUID of the product to update.
+   * @param productData Updated data.
+   * @returns Promise resolving to the updated Product domain entity or null.
    */
-  createProduct(productData: Omit<ProductDTO, 'id'>): Promise<ProductDTO>;
-  
+  updateProduct(id: string, productData: ProductUpdatePayload): Promise<Product | null>;
+
   /**
-   * Update an existing product
-   * @param id The ID of the product to update
-   * @param productData The updated product data
-   * @returns Promise resolving to the updated ProductDTO or null if not found
+   * Delete a product.
+   * @param id The UUID of the product to delete.
+   * @returns Promise resolving to true if deleted, false otherwise.
    */
-  updateProduct(id: number, productData: Partial<Omit<ProductDTO, 'id'>>): Promise<ProductDTO | null>;
-  
-  /**
-   * Delete a product
-   * @param id The ID of the product to delete
-   * @returns Promise resolving to true if deleted, false if not found
-   */
-  deleteProduct(id: number): Promise<boolean>;
+  deleteProduct(id: string): Promise<boolean>;
 }
+

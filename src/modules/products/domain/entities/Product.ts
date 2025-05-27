@@ -1,22 +1,29 @@
+import { v4 as uuidv4 } from 'uuid';
+
 /**
- * Product Entity
- * 
- * This is a domain entity that represents a product in our system.
- * It contains the core business logic and validation rules for products.
+ * Product Entity (Domain)
+ *
+ * Represents a product with its core attributes and business rules.
+ * Uses UUID for ID as per API contract alignment.
  */
 export class Product {
-  private _id: number | null;
+  // Properties match the database entity structure more closely now
+  // ID is string (UUID)
+  private _id: string;
   private _name: string;
   private _description: string | null;
   private _price: number;
   private _imageUrl: string | null;
-  private _categoryId: number;
+  private _categoryId: number; // Internal reference to category
+  private _categoryName?: string; // Optional: Store category name if loaded
   private _stock: number;
+  private _disponivel: boolean;
+  private _destaque: boolean;
   private _createdAt: Date;
   private _updatedAt: Date;
 
   constructor(
-    id: number | null,
+    id: string | null, // Can be null if creating a new one
     name: string,
     description: string | null,
     price: number,
@@ -24,20 +31,18 @@ export class Product {
     categoryId: number,
     stock: number = 0,
     createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
+    updatedAt: Date = new Date(),
+    disponivel: boolean = true,
+    destaque: boolean = false,
+    categoryName?: string // Optional category name from join
   ) {
-    // Validate inputs
-    if (name.trim().length === 0) {
-      throw new Error('Product name cannot be empty');
+    if (!id) {
+        id = uuidv4(); // Generate UUID if not provided
     }
-
-    if (price <= 0) {
-      throw new Error('Product price must be greater than zero');
-    }
-
-    if (stock < 0) {
-      throw new Error('Product stock cannot be negative');
-    }
+    // Basic validations
+    if (name.trim().length === 0) throw new Error('Nome do produto não pode ser vazio');
+    if (price <= 0) throw new Error('Preço do produto deve ser maior que zero');
+    if (stock < 0) throw new Error('Estoque do produto não pode ser negativo');
 
     this._id = id;
     this._name = name;
@@ -46,146 +51,50 @@ export class Product {
     this._imageUrl = imageUrl;
     this._categoryId = categoryId;
     this._stock = stock;
+    this._disponivel = disponivel;
+    this._destaque = destaque;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
+    this._categoryName = categoryName;
   }
 
   // Getters
-  get id(): number | null {
-    return this._id;
-  }
+  get id(): string { return this._id; }
+  get name(): string { return this._name; }
+  get description(): string | null { return this._description; }
+  get price(): number { return this._price; }
+  get imageUrl(): string | null { return this._imageUrl; }
+  get categoryId(): number { return this._categoryId; }
+  get categoryName(): string | undefined { return this._categoryName; }
+  get stock(): number { return this._stock; }
+  get disponivel(): boolean { return this._disponivel; }
+  get destaque(): boolean { return this._destaque; }
+  get createdAt(): Date { return this._createdAt; }
+  get updatedAt(): Date { return this._updatedAt; }
 
-  get name(): string {
-    return this._name;
-  }
-
-  get description(): string | null {
-    return this._description;
-  }
-
-  get price(): number {
-    return this._price;
-  }
-
-  get imageUrl(): string | null {
-    return this._imageUrl;
-  }
-
-  get categoryId(): number {
-    return this._categoryId;
-  }
-
-  get stock(): number {
-    return this._stock;
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  // Business methods
-  updateName(name: string): void {
-    if (name.trim().length === 0) {
-      throw new Error('Product name cannot be empty');
+  // Setters / Business Logic Methods (Example)
+  updateDetails(data: Partial<{ name: string; description: string | null; price: number; imageUrl: string | null; categoryId: number; stock: number; disponivel: boolean; destaque: boolean }>): void {
+    if (data.name !== undefined) {
+        if (data.name.trim().length === 0) throw new Error('Nome do produto não pode ser vazio');
+        this._name = data.name;
     }
-    this._name = name;
-    this._updatedAt = new Date();
-  }
-
-  updateDescription(description: string | null): void {
-    this._description = description;
-    this._updatedAt = new Date();
-  }
-
-  updatePrice(price: number): void {
-    if (price <= 0) {
-      throw new Error('Product price must be greater than zero');
+    if (data.description !== undefined) this._description = data.description;
+    if (data.price !== undefined) {
+        if (data.price <= 0) throw new Error('Preço do produto deve ser maior que zero');
+        this._price = data.price;
     }
-    this._price = price;
-    this._updatedAt = new Date();
-  }
-
-  updateImageUrl(imageUrl: string | null): void {
-    this._imageUrl = imageUrl;
-    this._updatedAt = new Date();
-  }
-
-  updateCategoryId(categoryId: number): void {
-    this._categoryId = categoryId;
-    this._updatedAt = new Date();
-  }
-
-  updateStock(stock: number): void {
-    if (stock < 0) {
-      throw new Error('Product stock cannot be negative');
+    if (data.imageUrl !== undefined) this._imageUrl = data.imageUrl;
+    if (data.categoryId !== undefined) this._categoryId = data.categoryId; // Consider validating category existence elsewhere
+    if (data.stock !== undefined) {
+        if (data.stock < 0) throw new Error('Estoque do produto não pode ser negativo');
+        this._stock = data.stock;
     }
-    this._stock = stock;
+    if (data.disponivel !== undefined) this._disponivel = data.disponivel;
+    if (data.destaque !== undefined) this._destaque = data.destaque;
+
     this._updatedAt = new Date();
   }
 
-  increaseStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new Error('Quantity must be greater than zero');
-    }
-    this._stock += quantity;
-    this._updatedAt = new Date();
-  }
-
-  decreaseStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new Error('Quantity must be greater than zero');
-    }
-    if (this._stock < quantity) {
-      throw new Error('Insufficient stock');
-    }
-    this._stock -= quantity;
-    this._updatedAt = new Date();
-  }
-
-  // Convert to data transfer object
-  toDTO(): ProductDTO {
-    return {
-      id: this._id,
-      name: this._name,
-      description: this._description,
-      price: this._price,
-      imageUrl: this._imageUrl,
-      categoryId: this._categoryId,
-      stock: this._stock,
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt
-    };
-  }
-
-  // Create from data transfer object
-  static fromDTO(dto: ProductDTO): Product {
-    return new Product(
-      dto.id,
-      dto.name,
-      dto.description,
-      dto.price,
-      dto.imageUrl,
-      dto.categoryId,
-      dto.stock,
-      dto.createdAt,
-      dto.updatedAt
-    );
-  }
+  // No DTO methods here, keep entity focused on domain state/logic
 }
 
-// Data Transfer Object interface
-export interface ProductDTO {
-  id: number | null;
-  name: string;
-  description: string | null;
-  price: number;
-  imageUrl: string | null;
-  categoryId: number;
-  stock: number;
-  createdAt: Date;
-  updatedAt: Date;
-}

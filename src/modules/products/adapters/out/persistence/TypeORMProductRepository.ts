@@ -1,169 +1,156 @@
-import { Repository } from 'typeorm';
-import { Product, ProductDTO } from '../../../domain/entities/Product';
-import { ProductRepository } from '../../../domain/ports/out/ProductRepository';
+import { Injectable } from '@nestjs/common'; // Adjust if not using NestJS
+import { InjectRepository } from '@nestjs/typeorm'; // Adjust if not using NestJS
+import { Repository, FindOptionsWhere, ILike } from 'typeorm';
+import { Product } from '../../domain/entities/Product'; // Assuming Product entity uses string ID now
+import { ProductRepository, ProdutoListagemDTO } from '../../domain/ports/out/ProductRepository';
 import { ProductEntity } from './entities/Product.entity';
-import { CategoryEntity } from '../../../../categories/adapters/out/persistence/entities/Category.entity';
-import { getDataSource } from '../../../../../lib/typeorm';
+import { CategoryEntity } from '../../../categories/adapters/out/persistence/entities/Category.entity'; // Adjust path
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * TypeORMProductRepository
- * 
- * This class implements the ProductRepository interface using TypeORM.
- * It serves as an output adapter for database operations.
- */
+// @Injectable() // Uncomment if using NestJS DI
 export class TypeORMProductRepository implements ProductRepository {
-  private productRepository: Repository<ProductEntity>;
-  private categoryRepository: Repository<CategoryEntity>;
 
-  constructor() {
-    // Initialize repositories - will be set in the initialize method
-    this.productRepository = null;
-    this.categoryRepository = null;
+  // constructor(
+  //   @InjectRepository(ProductEntity)
+  //   private readonly productRepository: Repository<ProductEntity>,
+  //   @InjectRepository(CategoryEntity) // Inject Category repository
+  //   private readonly categoryRepository: Repository<CategoryEntity>,
+  // ) {}
+  // Basic implementation without NestJS DI for now
+  constructor(
+      private readonly productOrmRepository: Repository<ProductEntity>,
+      private readonly categoryOrmRepository: Repository<CategoryEntity> // Need Category repo
+  ) {}
+
+  private mapEntityToDomain(entity: ProductEntity): Product {
+      // Assuming Product domain entity constructor matches ProductEntity structure
+      // Or create a specific mapping function if needed
+      return new Product(
+          entity.id,
+          entity.nome,
+          entity.descricao,
+          entity.preco,
+          entity.imagemUrl,
+          entity.categoryId, // Keep categoryId internally in domain if needed
+          entity.stock,
+          entity.createdAt,
+          entity.updatedAt,
+          entity.disponivel, // Add new fields
+          entity.destaque,   // Add new fields
+          entity.categoria?.name // Pass category name if available
+      );
   }
 
-  /**
-   * Initialize the repository
-   * This method should be called before using any other methods
-   */
-  async initialize(): Promise<void> {
-    const dataSource = await getDataSource();
-    this.productRepository = dataSource.getRepository(ProductEntity);
-    this.categoryRepository = dataSource.getRepository(CategoryEntity);
+  private mapDomainToEntity(domain: Product): Partial<ProductEntity> {
+      return {
+          id: domain.id || uuidv4(), // Ensure ID exists
+          nome: domain.name,
+          descricao: domain.description,
+          preco: domain.price,
+          imagemUrl: domain.imageUrl,
+          categoryId: domain.categoryId,
+          stock: domain.stock,
+          disponivel: domain.disponivel,
+          destaque: domain.destaque,
+          // createdAt and updatedAt are handled by TypeORM
+      };
   }
 
-  async findAll(): Promise<ProductDTO[]> {
-    const products = await this.productRepository.find({
-      relations: ['category']
-    });
-
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    }));
+  private mapEntityToListagemDTO(entity: ProductEntity): ProdutoListagemDTO {
+      return {
+          id: entity.id,
+          nome: entity.nome,
+          descricao: entity.descricao,
+          categoria: entity.categoria?.name || 'Categoria Desconhecida', // Use category name from relation
+          preco: entity.preco,
+          imagem_url: entity.imagemUrl,
+          disponivel: entity.disponivel,
+          destaque: entity.destaque,
+      };
   }
 
-  async findById(id: number): Promise<ProductDTO | null> {
-    const product = await this.productRepository.findOne({
-      where: { id },
-      relations: ['category']
-    });
+  async findAll(categoryName?: string): Promise<ProdutoListagemDTO[]> {
+      const whereClause: FindOptionsWhere<ProductEntity> = {};
 
-    if (!product) {
+      if (categoryName) {
+          // Find category by name first to get its ID
+          const category = await this.categoryOrmRepository.findOne({ where: { name: ILike(categoryName) } });
+          if (!category) {
+              return []; // No products if category doesn't exist
+          }
+          whereClause.categoryId = category.id;
+      }
+
+      const entities = await this.productOrmRepository.find({
+          where: whereClause,
+          relations: ['categoria'], // Ensure category relation is loaded
+          order: { nome: 'ASC' } // Example ordering
+      });
+
+      return entities.map(this.mapEntityToListagemDTO);
+  }
+
+  async findById(id: string): Promise<Product | null> {
+    const entity = await this.productOrmRepository.findOne({ where: { id }, relations: ['categoria'] });
+    return entity ? this.mapEntityToDomain(entity) : null;
+  }
+
+  async findByCategoryId(categoryId: number): Promise<Product[]> {
+    const entities = await this.productOrmRepository.find({ where: { categoryId }, relations: ['categoria'] });
+    return entities.map(this.mapEntityToDomain);
+  }
+
+  async save(product: Product): Promise<Product> {
+    const entityData = this.mapDomainToEntity(product);
+    // Ensure category exists before saving
+    const categoryExists = await this.categoryExists(entityData.categoryId!);
+    if (!categoryExists) {
+        throw new Error(`Categoria com ID ${entityData.categoryId} não encontrada.`);
+    }
+
+    const entity = this.productOrmRepository.create(entityData as ProductEntity);
+    const savedEntity = await this.productOrmRepository.save(entity);
+    // Re-fetch to include relations like category name
+    const reloadedEntity = await this.productOrmRepository.findOneOrFail({ where: { id: savedEntity.id }, relations: ['categoria'] });
+    return this.mapEntityToDomain(reloadedEntity);
+  }
+
+  async update(product: Product): Promise<Product | null> {
+    const entity = await this.productOrmRepository.findOne({ where: { id: product.id! } });
+    if (!entity) {
       return null;
     }
 
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    };
-  }
-
-  async findByCategoryId(categoryId: number): Promise<ProductDTO[]> {
-    const products = await this.productRepository.find({
-      where: { categoryId },
-      relations: ['category']
-    });
-
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    }));
-  }
-
-  async save(product: Product): Promise<ProductDTO> {
-    const productEntity = new ProductEntity();
-    productEntity.name = product.name;
-    productEntity.description = product.description;
-    productEntity.price = product.price;
-    productEntity.imageUrl = product.imageUrl;
-    productEntity.categoryId = product.categoryId;
-    productEntity.stock = product.stock;
-    // createdAt and updatedAt will be automatically set by TypeORM
-
-    const savedProduct = await this.productRepository.save(productEntity);
-
-    return {
-      id: savedProduct.id,
-      name: savedProduct.name,
-      description: savedProduct.description,
-      price: savedProduct.price,
-      imageUrl: savedProduct.imageUrl,
-      categoryId: savedProduct.categoryId,
-      stock: savedProduct.stock,
-      createdAt: savedProduct.createdAt,
-      updatedAt: savedProduct.updatedAt
-    };
-  }
-
-  async update(product: Product): Promise<ProductDTO | null> {
-    // Ensure product has an ID
-    if (product.id === null) {
-      throw new Error('Cannot update product without ID');
+    const updateData = this.mapDomainToEntity(product);
+    // Ensure category exists if it's being changed
+    if (updateData.categoryId && updateData.categoryId !== entity.categoryId) {
+        const categoryExists = await this.categoryExists(updateData.categoryId);
+        if (!categoryExists) {
+            throw new Error(`Categoria com ID ${updateData.categoryId} não encontrada.`);
+        }
     }
 
-    // Check if product exists
-    const existingProduct = await this.productRepository.findOne({
-      where: { id: product.id }
-    });
-
-    if (!existingProduct) {
-      return null;
-    }
-
-    // Update product
-    existingProduct.name = product.name;
-    existingProduct.description = product.description;
-    existingProduct.price = product.price;
-    existingProduct.imageUrl = product.imageUrl;
-    existingProduct.categoryId = product.categoryId;
-    existingProduct.stock = product.stock;
-    // updatedAt will be automatically updated by TypeORM
-
-    const updatedProduct = await this.productRepository.save(existingProduct);
-
-    return {
-      id: updatedProduct.id,
-      name: updatedProduct.name,
-      description: updatedProduct.description,
-      price: updatedProduct.price,
-      imageUrl: updatedProduct.imageUrl,
-      categoryId: updatedProduct.categoryId,
-      stock: updatedProduct.stock,
-      createdAt: updatedProduct.createdAt,
-      updatedAt: updatedProduct.updatedAt
-    };
+    // Merge updates
+    this.productOrmRepository.merge(entity, updateData);
+    const updatedEntity = await this.productOrmRepository.save(entity);
+    // Re-fetch to include relations
+    const reloadedEntity = await this.productOrmRepository.findOneOrFail({ where: { id: updatedEntity.id }, relations: ['categoria'] });
+    return this.mapEntityToDomain(reloadedEntity);
   }
 
-  async delete(id: number): Promise<boolean> {
-    const result = await this.productRepository.delete(id);
-    return result.affected > 0;
+  async delete(id: string): Promise<boolean> {
+    const result = await this.productOrmRepository.delete(id);
+    return result.affected !== null && result.affected !== undefined && result.affected > 0;
   }
 
   async categoryExists(categoryId: number): Promise<boolean> {
-    const category = await this.categoryRepository.findOne({
-      where: { id: categoryId }
-    });
-    return category !== null;
+    const count = await this.categoryOrmRepository.count({ where: { id: categoryId } });
+    return count > 0;
+  }
+
+  async findCategoryIdByName(categoryName: string): Promise<number | null> {
+      const category = await this.categoryOrmRepository.findOne({ where: { name: ILike(categoryName) } });
+      return category ? category.id : null;
   }
 }
+

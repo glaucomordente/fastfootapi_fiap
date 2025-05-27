@@ -1,145 +1,57 @@
-# FastFood API
+# FastFoodAPI FIAP - Tech Challenge Fase 2
 
-API para sistema de autoatendimento de fast food.
+API para sistema de autoatendimento de fast food, desenvolvida como parte do Tech Challenge Fase 2 da FIAP.
 
-## Arquitetura Hexagonal
+## Descrição
 
-Este projeto utiliza a Arquitetura Hexagonal (também conhecida como "Ports and Adapters") para organizar o código de forma modular e desacoplada.
+Esta API implementa funcionalidades para gerenciamento de clientes (identificação/cadastro), produtos, carrinho de compras, pagamento (simulado com QR Code) e pedidos (parcialmente implementado).
 
-### Estrutura do Projeto
+## Pré-requisitos
 
-```
-src/
-├── modules/                  # Módulos da aplicação organizados por domínio
-│   ├── categories/           # Módulo de categorias
-│   │   ├── adapters/         # Adaptadores para interfaces externas
-│   │   │   ├── in/           # Adaptadores de entrada (controllers)
-│   │   │   └── out/          # Adaptadores de saída (repositories)
-│   │   ├── application/      # Lógica de aplicação
-│   │   │   └── services/     # Serviços que implementam os casos de uso
-│   │   └── domain/           # Regras de negócio e entidades
-│   │       ├── entities/     # Entidades de domínio
-│   │       └── ports/        # Interfaces (portas)
-│   │           ├── in/       # Portas de entrada (casos de uso)
-│   │           └── out/      # Portas de saída (repositórios)
-│   └── products/             # Módulo de produtos (estrutura similar)
-├── lib/                      # Bibliotecas e configurações
-├── configs/                  # Configurações da aplicação
-└── routes/                   # Rotas da API
-```
-
-### Princípios da Arquitetura Hexagonal
-
-1. **Separação de Responsabilidades**: O código é organizado em camadas com responsabilidades bem definidas.
-2. **Independência de Frameworks**: A lógica de negócio é independente de frameworks e bibliotecas externas.
-3. **Testabilidade**: A arquitetura facilita a escrita de testes unitários e de integração.
-4. **Adaptabilidade**: É fácil trocar implementações de adaptadores sem afetar a lógica de negócio.
-
-### Camadas da Arquitetura
-
-1. **Domain (Domínio)**
-   - Contém as entidades de negócio e regras de domínio
-   - Define as interfaces (portas) para interagir com o domínio
-
-2. **Application (Aplicação)**
-   - Implementa os casos de uso da aplicação
-   - Orquestra as entidades de domínio para realizar operações de negócio
-
-3. **Adapters (Adaptadores)**
-   - **Input Adapters**: Adaptam requisições externas para o formato esperado pelo domínio
-   - **Output Adapters**: Implementam as interfaces de saída definidas pelo domínio
-
-## Tecnologias Utilizadas
-
-- Node.js
-- TypeScript
-- Express
-- TypeORM
-- PostgreSQL
-- Swagger
-
-## Dados Iniciais
-
-Ao iniciar a aplicação, os seguintes dados são automaticamente criados no banco de dados:
-
-### Categorias
-
-1. **Lanches** - Hambúrgueres, sanduíches e outros lanches
-2. **Bebidas** - Refrigerantes, sucos, água e outras bebidas
-3. **Acompanhamentos** - Batatas fritas, onion rings e outros acompanhamentos
-4. **Sobremesas** - Sorvetes, milk-shakes e outras sobremesas
-
-### Produtos
-
-**Lanches:**
-- Hambúrguer Clássico - R$ 18,90
-- Cheeseburger Duplo - R$ 24,90
-
-**Bebidas:**
-- Refrigerante Cola - R$ 5,90
-- Suco de Laranja - R$ 7,90
-
-**Acompanhamentos:**
-- Batata Frita - R$ 9,90
-- Onion Rings - R$ 11,90
-
-**Sobremesas:**
-- Sundae de Chocolate - R$ 8,90
-- Milkshake de Morango - R$ 12,90
-
-Cada produto já possui um estoque inicial e campos de data de criação e atualização.
+*   Docker
+*   Docker Compose
 
 ## Configuração e Execução
 
-### Pré-requisitos
+1.  **Clone o repositório ou extraia o arquivo zip:**
+    ```bash
+    # Se clonando
+    git clone <url_do_repositorio>
+    cd fastfootapi_fiap
 
-- Node.js
-- PostgreSQL
-- Docker (opcional)
+    # Se extraindo
+    unzip fastfootapi_fiap.zip
+    cd fastfootapi_fiap
+    ```
 
-### Instalação Local
+2.  **Configure as variáveis de ambiente:**
+    *   Copie o arquivo de exemplo `.env.example` para `.env`:
+        ```bash
+        cp .env.example .env
+        ```
+    *   Revise e ajuste as variáveis no arquivo `.env` se necessário (portas, credenciais do banco de dados).
 
-```bash
-# Instalar dependências
-npm install
+3.  **Suba os containers com Docker Compose:**
+    *   Este comando fará o build da imagem da aplicação (se ainda não existir) e iniciará os containers da aplicação e do banco de dados PostgreSQL.
+    ```bash
+    docker compose up --build -d
+    ```
 
-# Configurar variáveis de ambiente
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+## Uso
 
-# Iniciar o PostgreSQL localmente usando Docker
-docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=fastfood_db -p 5432:5432 -d postgres:15-alpine
+*   **API Base URL:** `http://localhost:<PORTA_APP>/api/v1` (a porta padrão é 3000, definida em `.env`)
+*   **Documentação da API (Swagger):** `http://localhost:<PORTA_APP>/api-docs`
 
-# Iniciar o servidor de desenvolvimento
-npm run dev
-```
+## Limitações e Observações
 
-### Execução com Docker
+*   **Ambiente Docker:** A execução e validação completa da aplicação dependem de um ambiente com Docker e Docker Compose instalados e funcionais.
+*   **Módulo Pedido:** As rotas relacionadas ao status do pedido e fluxo de cozinha (`/api/v1/pedidos/...`) foram definidas nos contratos, mas a implementação no código (`OrderService`, `OrderRepository`, `OrderController`) contém apenas placeholders e **não está funcional**. A lógica de atualização de status e consulta de pedidos pendentes precisa ser desenvolvida.
+*   **Testes:** Testes automatizados (unitários, integração) não foram implementados ou executados no escopo deste desenvolvimento.
+A validação do build e execução via Docker não pôde ser realizada no ambiente de desenvolvimento atual devido à ausência do Docker.
+*   **Pagamento:** A geração de QR Code e a confirmação de pagamento utilizam serviços simulados (mocks) dentro do `PagamentoService` e não se integram com um provedor real como Mercado Pago.
+*   **Seeds:** O script de seeds (`src/database/seeds.ts`) existe mas não está configurado para rodar automaticamente na inicialização (`src/index.ts`).
 
-```bash
-# Construir e iniciar os containers
-docker-compose up -d
+## Estrutura do Projeto
 
-# Ver logs da aplicação
-docker-compose logs -f fastfood-api
+O projeto segue uma estrutura modular, organizada por funcionalidades (cliente, produto, carrinho, pagamento, pedido, etc.), utilizando princípios de arquitetura hexagonal (portas e adaptadores) e TypeORM para persistência de dados.
 
-# Parar os containers
-docker-compose down
-
-# Reconstruir os containers após alterações
-docker-compose up -d --build
-```
-
-### Comandos TypeORM
-
-```bash
-# Gerar uma nova migração
-npm run migration:generate -- nome-da-migracao
-
-# Executar migrações
-npm run migration:run
-```
-
-## Documentação da API
-
-A documentação da API está disponível em `/api-docs` quando o servidor estiver em execução.

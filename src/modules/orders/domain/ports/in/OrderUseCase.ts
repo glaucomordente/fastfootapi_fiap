@@ -1,45 +1,38 @@
-import { CreateOrderDTO, Order, OrderDTO, OrderStatus } from '../../entities/Order';
+import { Order } from "../../domain/entities/Order";
+
+// DTO for creating an order
+export interface CreateOrderDTO {
+  clienteId?: string;
+  itens: Array<{
+    produtoId: string;
+    quantidade: number;
+    precoUnitario: number;
+    observacoes?: string | null;
+  }>;
+  valorTotal: number;
+  pagamentoId: string; // Link to the payment
+}
 
 /**
  * OrderUseCase Interface (Input Port)
- * 
- * This interface defines the operations that can be performed on orders.
- * It serves as the primary input port for the hexagonal architecture.
- * Application services will implement this interface to provide the actual business logic.
+ *
+ * Defines operations for managing orders.
  */
 export interface OrderUseCase {
   /**
-   * Get all orders
-   * @returns Promise resolving to an array of OrderDTO objects
+   * Create a new order.
+   * @param orderData Data for the new order.
+   * @returns Promise resolving to the created Order entity.
    */
-  getAllOrders(): Promise<OrderDTO[]>;
-  
+  createOrder(orderData: CreateOrderDTO): Promise<Order>;
+
   /**
-   * Get an order by its ID
-   * @param id The ID of the order to retrieve
-   * @returns Promise resolving to an OrderDTO or null if not found
+   * Get an order by its ID.
+   * @param id The ID of the order.
+   * @returns Promise resolving to the Order entity or null.
    */
-  getOrderById(id: number): Promise<OrderDTO | null>;
-  
-  /**
-   * Create a new order
-   * @param orderData The data for the new order
-   * @returns Promise resolving to the created OrderDTO
-   */
-  createOrder(orderData: CreateOrderDTO): Promise<OrderDTO>;
-  
-  /**
-   * Update the status of an order
-   * @param id The ID of the order to update
-   * @param status The new status for the order
-   * @returns Promise resolving to the updated OrderDTO or null if not found
-   */
-  updateOrderStatus(id: number, status: OrderStatus): Promise<OrderDTO | null>;
-  
-  /**
-   * Delete an order
-   * @param id The ID of the order to delete
-   * @returns Promise resolving to true if deleted, false if not found
-   */
-  deleteOrder(id: number): Promise<boolean>;
+  getOrderById(id: string): Promise<Order | null>;
+
+  // Add other methods as needed (e.g., updateStatus, listOrders, etc.)
 }
+
