@@ -1,16 +1,19 @@
 import { Router, Request, Response } from 'express';
 import { CategoryModule } from '../modules/categories/CategoryModule';
 import { ProductModule } from '../modules/products/ProductModule';
+import { IdentificacaoController } from '../controllers/identificacaoController';
 
 /**
  * Setup routes with initialized modules
  * @param categoryModule Initialized CategoryModule
  * @param productModule Initialized ProductModule
+ * @param identificacaoController Initialized IdentificacaoController
  * @returns Express router
  */
 export default function setupRoutes(
   categoryModule: CategoryModule,
-  productModule: ProductModule
+  productModule: ProductModule,
+  identificacaoController: IdentificacaoController
 ): Router {
   const router = Router();
   
@@ -37,6 +40,14 @@ export default function setupRoutes(
   router.post('/products', productController.createProduct.bind(productController));
   router.put('/products/:id', productController.updateProduct.bind(productController));
   router.delete('/products/:id', productController.deleteProduct.bind(productController));
+
+  // Identificação routes
+  router.get('/api/v1/sistema/acesso', identificacaoController.getAcessoSistema.bind(identificacaoController));
+  router.post('/api/v1/identificacao/validar', identificacaoController.postValidaIdentificacao.bind(identificacaoController));
+  router.get('/api/v1/identificacao/buscar', identificacaoController.getBuscaIdentificacao.bind(identificacaoController));
+
+  // Cadastro routes
+  router.post('/api/v1/cadastro/inserir', identificacaoController.postInsereDadosCadastro.bind(identificacaoController));
 
   return router;
 }

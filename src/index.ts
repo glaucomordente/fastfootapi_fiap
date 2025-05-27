@@ -5,8 +5,10 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import * as winston from 'winston';
 import dotenv from 'dotenv';
 import { getDataSource } from './lib/typeorm';
+import { IdentificacaoController } from './controllers/identificacaoController'; // Added
 import { CategoryModule } from './modules/categories/CategoryModule';
 import { ProductModule } from './modules/products/ProductModule';
+import setupRoutes from './routes'; // Added
 import { runSeeds } from './database/seeds';
 
 dotenv.config();
@@ -58,10 +60,14 @@ async function bootstrap() {
     await categoryModule.initialize();
     await productModule.initialize();
     winston.info('Modules initialized');
+
+    // Instantiate controllers
+    const identificacaoController = new IdentificacaoController(); // Added
     
     // Setup routes
-    const routes = require('./routes');
-    app.use('/api', routes);
+    // const routes = require('./routes'); // Old way
+    const appRoutes = setupRoutes(categoryModule, productModule, identificacaoController); // Modified
+    app.use('/api', appRoutes); // Modified
 
     // Start server
     const PORT = process.env.PORT || 3000;
