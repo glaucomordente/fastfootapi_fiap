@@ -1,22 +1,26 @@
 import { Router, Request, Response } from 'express';
 import { CategoryModule } from '../modules/categories/CategoryModule';
 import { ProductModule } from '../modules/products/ProductModule';
+import { CustomerModule } from '../modules/customer/CustomerModule'; // Adicione esta linha
 
 /**
  * Setup routes with initialized modules
  * @param categoryModule Initialized CategoryModule
  * @param productModule Initialized ProductModule
+ * @param customerModule Initialized CustomerModule
  * @returns Express router
  */
 export default function setupRoutes(
   categoryModule: CategoryModule,
-  productModule: ProductModule
+  productModule: ProductModule,
+  customerModule: CustomerModule // Adicione este parâmetro
 ): Router {
   const router = Router();
   
   // Get controllers from initialized modules
   const categoryController = categoryModule.getController();
   const productController = productModule.getController();
+  const customerController = customerModule.getController(); // Adicione esta linha
 
   // Health check route
   router.get('/health', (req: Request, res: Response) => {
@@ -37,6 +41,13 @@ export default function setupRoutes(
   router.post('/products', productController.createProduct.bind(productController));
   router.put('/products/:id', productController.updateProduct.bind(productController));
   router.delete('/products/:id', productController.deleteProduct.bind(productController));
+
+  // Customer routes
+  router.get('/customers', customerController.getAllCustomers.bind(customerController));
+  router.get('/customers/:id', customerController.getCustomerById.bind(customerController));
+  router.post('/customers', customerController.createCustomer.bind(customerController));
+  router.put('/customers/:id', customerController.updateCustomer.bind(customerController));
+  router.delete('/customers/:id', customerController.deleteCustomer.bind(customerController));
 
   return router;
 }

@@ -106,3 +106,48 @@
 {"level":"info","message":"FastFoodAPI rodando na porta 3000"}
 {"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
 {"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"error","message":"Failed to start the application Cannot read properties of undefined (reading 'getAllCustomers')","stack":"TypeError: Cannot read properties of undefined (reading 'getAllCustomers')\n    at new CustomerModule (/home/gui/workspace/fastfootapi_fiap/src/modules/customer/CustomerModule.ts:22:48)\n    at /home/gui/workspace/fastfootapi_fiap/src/index.ts:56:28\n    at Generator.next (<anonymous>)\n    at fulfilled (/home/gui/workspace/fastfootapi_fiap/src/index.ts:38:58)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"function"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaa"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaafunction"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaa[object Object]"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaa[object Object]"}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaa[object Object]"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"FastFoodAPI rodando na porta 3000"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"aaaaaaaaaa[object Object]"}
