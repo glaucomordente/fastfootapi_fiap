@@ -7,8 +7,9 @@ import dotenv from "dotenv";
 import { getDataSource } from "./lib/typeorm";
 import { CategoryModule } from "./modules/categories/CategoryModule";
 import { ProductModule } from "./modules/products/ProductModule";
-import { CustomerModule } from "./modules/customer/CustomerModule"; // Adicione esta linha
+import { CustomerModule } from "./modules/customer/CustomerModule";
 import { runSeeds } from "./database/seeds";
+import path from "path";
 
 dotenv.config();
 
@@ -30,12 +31,30 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API para sistema de autoatendimento de fast food",
     },
-    servers: [{ url: "http://localhost:3000/api" }],
+    servers: [
+      {
+        url: "http://localhost:3000",
+        description: "Development server",
+      },
+    ],
   },
-  apis: ["./src/routes/*.js", "./src/routes/*.ts", "./src/controllers/*.ts"],
+  apis: [
+    path.join(__dirname, "./routes/*.js"),
+    path.join(__dirname, "./routes/*.ts"),
+    path.join(__dirname, "./controllers/*.ts"),
+  ],
 };
+
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Enable CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
 
 app.use(express.json());
 
@@ -52,21 +71,24 @@ async function bootstrap() {
     // Initialize modules
     const categoryModule = new CategoryModule();
     const productModule = new ProductModule();
-    const customerModule = new CustomerModule(); // Adicione esta linha
+    const customerModule = new CustomerModule();
 
     await categoryModule.initialize();
     await productModule.initialize();
-    await customerModule.initialize(); // Adicione esta linha
+    await customerModule.initialize();
     winston.info("Modules initialized");
 
     // Setup routes
-    const setupRoutes = require("./routes").default;
-    app.use("/api", setupRoutes(categoryModule, productModule, customerModule)); // Ajuste aqui
+    const setupRoutes = require("./routes");
+    app.use("/api", setupRoutes(categoryModule, productModule, customerModule));
 
     // Start server
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-      winston.info(`FastFoodAPI rodando na porta ${PORT}`);
+      winston.info(`FastFoodAPI running on port ${PORT}`);
+      winston.info(
+        `Swagger documentation available at http://localhost:${PORT}/api-docs`
+      );
     });
   } catch (error) {
     winston.error("Failed to start the application", error);

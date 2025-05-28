@@ -11,10 +11,11 @@ import { getDataSource } from "../../../../../lib/typeorm";
  * It serves as an output adapter for database operations.
  */
 export class TypeORMCustomerRepository implements CustomerRepository {
-  private repository: Repository<CustumerEntity> | null = null;
+  private repository: Repository<CustumerEntity>;
 
   constructor() {
     // Repository will be set in the initialize method
+    this.repository = null;
   }
 
   /**

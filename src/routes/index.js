@@ -3,6 +3,20 @@ const router = express.Router();
 const categoryController = require('../controllers/categoryController');
 const productController = require('../controllers/productController');
 const orderController = require('../controllers/orderController');
+const customerController = require('../controllers/customerController');
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Categories
+ *     description: Category management
+ *   - name: Products
+ *     description: Product management
+ *   - name: Orders
+ *     description: Order management
+ *   - name: Customers
+ *     description: Customer management
+ */
 
 /**
  * @swagger
@@ -22,10 +36,6 @@ const orderController = require('../controllers/orderController');
  *         description:
  *           type: string
  *           description: The description of the category
- *       example:
- *         id: 1
- *         name: Lanches
- *         description: Hambúrgueres, sanduíches e outros lanches
  *     
  *     Product:
  *       type: object
@@ -56,24 +66,6 @@ const orderController = require('../controllers/orderController');
  *         stock:
  *           type: integer
  *           description: The available stock quantity
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: The date the product was created
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: The date the product was last updated
- *       example:
- *         id: 1
- *         name: Hambúrguer Clássico
- *         description: Hambúrguer de carne bovina, queijo, alface, tomate e molho especial
- *         price: 18.90
- *         imageUrl: https://example.com/hamburger.jpg
- *         categoryId: 1
- *         stock: 50
- *         createdAt: 2025-04-29T14:00:00Z
- *         updatedAt: 2025-04-29T14:00:00Z
  *     
  *     Order:
  *       type: object
@@ -99,14 +91,6 @@ const orderController = require('../controllers/orderController');
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/OrderItem'
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: The date the order was created
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: The date the order was last updated
  *     
  *     OrderItem:
  *       type: object
@@ -127,33 +111,40 @@ const orderController = require('../controllers/orderController');
  *           type: number
  *           format: float
  *           description: The unit price of the product
- *         orderId:
+ *     
+ *     Customer:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - cpf
+ *       properties:
+ *         id:
  *           type: integer
- *           description: The order ID this item belongs to
+ *           description: The auto-generated id of the customer
+ *         name:
+ *           type: string
+ *           description: The name of the customer
+ *         email:
+ *           type: string
+ *           description: The email of the customer
+ *         cpf:
+ *           type: string
+ *           description: The CPF (Brazilian tax ID) of the customer
+ *         phone:
+ *           type: string
+ *           description: The phone number of the customer
  */
-
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Verifica o status da FastFoodAPI
- *     responses:
- *       200:
- *         description: API está funcionando
- */
-router.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
 
 /**
  * @swagger
  * /categories:
  *   get:
- *     summary: Retorna todas as categorias
  *     tags: [Categories]
+ *     summary: Get all categories
  *     responses:
  *       200:
- *         description: Lista de todas as categorias
+ *         description: List of categories
  *         content:
  *           application/json:
  *             schema:
@@ -161,115 +152,28 @@ router.get('/health', (req, res) => {
  *               items:
  *                 $ref: '#/components/schemas/Category'
  *   post:
- *     summary: Cria uma nova categoria
  *     tags: [Categories]
+ *     summary: Create a new category
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
+ *             $ref: '#/components/schemas/Category'
  *     responses:
  *       201:
- *         description: Categoria criada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Category'
- *       400:
- *         description: Dados inválidos
+ *         description: Category created successfully
  */
-router.get('/categories', categoryController.getAllCategories);
-router.post('/categories', categoryController.createCategory);
-
-/**
- * @swagger
- * /categories/{id}:
- *   get:
- *     summary: Retorna uma categoria pelo ID
- *     tags: [Categories]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID da categoria
- *     responses:
- *       200:
- *         description: Detalhes da categoria
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Category'
- *       404:
- *         description: Categoria não encontrada
- *   put:
- *     summary: Atualiza uma categoria
- *     tags: [Categories]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID da categoria
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *     responses:
- *       200:
- *         description: Categoria atualizada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Category'
- *       404:
- *         description: Categoria não encontrada
- *   delete:
- *     summary: Remove uma categoria
- *     tags: [Categories]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID da categoria
- *     responses:
- *       204:
- *         description: Categoria removida com sucesso
- *       404:
- *         description: Categoria não encontrada
- */
-router.get('/categories/:id', categoryController.getCategoryById);
-router.put('/categories/:id', categoryController.updateCategory);
-router.delete('/categories/:id', categoryController.deleteCategory);
 
 /**
  * @swagger
  * /products:
  *   get:
- *     summary: Retorna todos os produtos
  *     tags: [Products]
+ *     summary: Get all products
  *     responses:
  *       200:
- *         description: Lista de todos os produtos
+ *         description: List of products
  *         content:
  *           application/json:
  *             schema:
@@ -277,158 +181,28 @@ router.delete('/categories/:id', categoryController.deleteCategory);
  *               items:
  *                 $ref: '#/components/schemas/Product'
  *   post:
- *     summary: Cria um novo produto
  *     tags: [Products]
+ *     summary: Create a new product
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - name
- *               - price
- *               - categoryId
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               imageUrl:
- *                 type: string
- *               categoryId:
- *                 type: integer
- *               stock:
- *                 type: integer
+ *             $ref: '#/components/schemas/Product'
  *     responses:
  *       201:
- *         description: Produto criado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Product'
- *       400:
- *         description: Dados inválidos
+ *         description: Product created successfully
  */
-router.get('/products', productController.getAllProducts);
-router.post('/products', productController.createProduct);
-
-/**
- * @swagger
- * /products/{id}:
- *   get:
- *     summary: Retorna um produto pelo ID
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do produto
- *     responses:
- *       200:
- *         description: Detalhes do produto
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Product'
- *       404:
- *         description: Produto não encontrado
- *   put:
- *     summary: Atualiza um produto
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do produto
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               imageUrl:
- *                 type: string
- *               categoryId:
- *                 type: integer
- *               stock:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Produto atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Product'
- *       404:
- *         description: Produto não encontrado
- *   delete:
- *     summary: Remove um produto
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do produto
- *     responses:
- *       204:
- *         description: Produto removido com sucesso
- *       404:
- *         description: Produto não encontrado
- */
-router.get('/products/:id', productController.getProductById);
-router.put('/products/:id', productController.updateProduct);
-router.delete('/products/:id', productController.deleteProduct);
-
-/**
- * @swagger
- * /products/category/{categoryId}:
- *   get:
- *     summary: Retorna produtos por categoria
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: categoryId
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID da categoria
- *     responses:
- *       200:
- *         description: Lista de produtos da categoria
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Product'
- */
-router.get('/products/category/:categoryId', productController.getProductsByCategory);
 
 /**
  * @swagger
  * /orders:
  *   get:
- *     summary: Retorna todos os pedidos
  *     tags: [Orders]
+ *     summary: Get all orders
  *     responses:
  *       200:
- *         description: Lista de todos os pedidos
+ *         description: List of orders
  *         content:
  *           application/json:
  *             schema:
@@ -436,130 +210,84 @@ router.get('/products/category/:categoryId', productController.getProductsByCate
  *               items:
  *                 $ref: '#/components/schemas/Order'
  *   post:
- *     summary: Cria um novo pedido
  *     tags: [Orders]
+ *     summary: Create a new order
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - customerName
- *               - items
- *             properties:
- *               customerName:
- *                 type: string
- *               items:
- *                 type: array
- *                 items:
- *                   type: object
- *                   required:
- *                     - productId
- *                     - quantity
- *                   properties:
- *                     productId:
- *                       type: integer
- *                     quantity:
- *                       type: integer
+ *             $ref: '#/components/schemas/Order'
  *     responses:
  *       201:
- *         description: Pedido criado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Order'
- *       400:
- *         description: Dados inválidos
+ *         description: Order created successfully
  */
-router.get('/orders', orderController.getAllOrders);
-router.post('/orders', orderController.createOrder);
 
 /**
  * @swagger
- * /orders/{id}:
+ * /customers:
  *   get:
- *     summary: Retorna um pedido pelo ID
- *     tags: [Orders]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do pedido
+ *     tags: [Customers]
+ *     summary: Get all customers
  *     responses:
  *       200:
- *         description: Detalhes do pedido
+ *         description: List of customers
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Order'
- *       404:
- *         description: Pedido não encontrado
- */
-router.get('/orders/:id', orderController.getOrderById);
-
-/**
- * @swagger
- * /orders/{id}/status:
- *   put:
- *     summary: Atualiza o status de um pedido
- *     tags: [Orders]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do pedido
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Customer'
+ *   post:
+ *     tags: [Customers]
+ *     summary: Create a new customer
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [PENDING, PREPARING, READY, COMPLETED, CANCELLED]
+ *             $ref: '#/components/schemas/Customer'
  *     responses:
- *       200:
- *         description: Status do pedido atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Order'
- *       400:
- *         description: Status inválido
- *       404:
- *         description: Pedido não encontrado
+ *       201:
+ *         description: Customer created successfully
  */
-router.put('/orders/:id/status', orderController.updateOrderStatus);
 
-/**
- * @swagger
- * /orders/{id}/cancel:
- *   put:
- *     summary: Cancela um pedido
- *     tags: [Orders]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID do pedido
- *     responses:
- *       200:
- *         description: Pedido cancelado com sucesso
- *       400:
- *         description: Pedido já está cancelado
- *       404:
- *         description: Pedido não encontrado
- */
-router.put('/orders/:id/cancel', orderController.cancelOrder);
+function setupRoutes(categoryModule, productModule, customerModule) {
+  router.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+  });
 
-module.exports = router;
+  // Categories routes
+  router.get('/categories', categoryController.getAllCategories);
+  router.post('/categories', categoryController.createCategory);
+  router.get('/categories/:id', categoryController.getCategoryById);
+  router.put('/categories/:id', categoryController.updateCategory);
+  router.delete('/categories/:id', categoryController.deleteCategory);
+
+  // Products routes
+  router.get('/products', productController.getAllProducts);
+  router.post('/products', productController.createProduct);
+  router.get('/products/:id', productController.getProductById);
+  router.put('/products/:id', productController.updateProduct);
+  router.delete('/products/:id', productController.deleteProduct);
+  router.get('/products/category/:categoryId', productController.getProductsByCategory);
+
+  // Orders routes
+  router.get('/orders', orderController.getAllOrders);
+  router.post('/orders', orderController.createOrder);
+  router.get('/orders/:id', orderController.getOrderById);
+  router.put('/orders/:id/status', orderController.updateOrderStatus);
+  router.put('/orders/:id/cancel', orderController.cancelOrder);
+
+  // Customer routes
+  router.get('/customers', customerController.getAllCustomers);
+  router.post('/customers', customerController.createCustomer);
+  router.get('/customers/:id', customerController.getCustomerById);
+  router.put('/customers/:id', customerController.updateCustomer);
+  router.delete('/customers/:id', customerController.deleteCustomer);
+  router.get('/customers/:id/orders', customerController.getCustomerOrders);
+
+  return router;
+}
+
+module.exports = setupRoutes;

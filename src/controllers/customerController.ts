@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { getDataSource } from "../lib/typeorm";
 import { CustumerEntity } from "../modules/customer/adapters/out/persistence/entities/Customer.entity";
+import { OrderEntity } from "../modules/orders/adapters/out/persistence/entities/Order.entity";
 
 /**
  * Get all customers
@@ -126,6 +127,38 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     return res.status(204).send();
   } catch (error) {
     console.error("Error deleting customer:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * Get all orders for a specific customer
+ */
+export const getCustomerOrders = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const dataSource = await getDataSource();
+    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const orderRepository = dataSource.getRepository(OrderEntity);
+
+    // First get the customer to get their name
+    const customer = await customerRepository.findOne({
+      where: { id: Number(id) },
+    });
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    const orders = await orderRepository.find({
+      where: { customerName: customer.name },
+      relations: ["items", "items.product"],
+      order: { createdAt: "DESC" },
+    });
+
+    return res.status(200).json(orders);
+  } catch (error) {
+    console.error("Error fetching customer orders:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

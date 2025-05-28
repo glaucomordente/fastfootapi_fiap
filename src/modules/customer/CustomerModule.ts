@@ -26,7 +26,6 @@ export class CustomerModule {
 
     // Initialize the controller (input adapter)
     this.customerController = new CustomerController(this.customerService);
-    winston.info("aaaaaaaaaa" +  this.customerController);
   }
 
   /**
