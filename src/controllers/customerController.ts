@@ -3,6 +3,7 @@ import { getDataSource } from "../lib/typeorm";
 import { CustumerEntity } from "../modules/customer/adapters/out/persistence/entities/Customer.entity";
 import { OrderEntity } from "../modules/orders/adapters/out/persistence/entities/Order.entity";
 import { QueryFailedError } from "typeorm";
+import { validate } from "class-validator";
 
 /**
  * Get all customers
@@ -58,6 +59,23 @@ export const createCustomer = async (req: Request, res: Response) => {
     const dataSource = await getDataSource();
     const customerRepository = dataSource.getRepository(CustumerEntity);
 
+    // Create customer instance
+    const newCustomer = customerRepository.create({
+      name,
+      email,
+      cpf,
+      phone: phone ?? null,
+    });
+
+    // Validate using class-validator
+    const errors = await validate(newCustomer);
+    if (errors.length > 0) {
+      const validationErrors = errors.reduce((acc, err) => {
+        return { ...acc, ...err.constraints };
+      }, {});
+      return res.status(400).json({ errors: validationErrors });
+    }
+
     // Check if email already exists
     const existingEmail = await customerRepository.findOne({
       where: { email },
@@ -75,13 +93,6 @@ export const createCustomer = async (req: Request, res: Response) => {
     if (existingCPF) {
       return res.status(400).json({ error: "CPF already registered" });
     }
-
-    const newCustomer = customerRepository.create({
-      name,
-      email,
-      cpf,
-      phone: phone ?? null,
-    });
 
     const savedCustomer = await customerRepository.save(newCustomer);
     return res.status(201).json(savedCustomer);
@@ -121,6 +132,21 @@ export const updateCustomer = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Customer not found" });
     }
 
+    // Update fields
+    if (name !== undefined) existingCustomer.name = name;
+    if (email !== undefined) existingCustomer.email = email;
+    if (cpf !== undefined) existingCustomer.cpf = cpf;
+    if (phone !== undefined) existingCustomer.phone = phone;
+
+    // Validate using class-validator
+    const errors = await validate(existingCustomer);
+    if (errors.length > 0) {
+      const validationErrors = errors.reduce((acc, err) => {
+        return { ...acc, ...err.constraints };
+      }, {});
+      return res.status(400).json({ errors: validationErrors });
+    }
+
     // If email is being updated, check if it's already in use by another customer
     if (email && email !== existingCustomer.email) {
       const emailExists = await customerRepository.findOne({
@@ -140,12 +166,6 @@ export const updateCustomer = async (req: Request, res: Response) => {
         return res.status(400).json({ error: "CPF already registered" });
       }
     }
-
-    // Update fields
-    if (name !== undefined) existingCustomer.name = name;
-    if (email !== undefined) existingCustomer.email = email;
-    if (cpf !== undefined) existingCustomer.cpf = cpf;
-    if (phone !== undefined) existingCustomer.phone = phone;
 
     const updatedCustomer = await customerRepository.save(existingCustomer);
     return res.status(200).json(updatedCustomer);

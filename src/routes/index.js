@@ -4,6 +4,8 @@ const categoryController = require('../controllers/categoryController');
 const productController = require('../controllers/productController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
+const { ValidationPipe } = require('../lib/validation.pipe');
+const { CustumerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
 
 /**
  * @swagger
@@ -559,11 +561,11 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   router.put('/orders/:id/status', orderController.updateOrderStatus);
   router.put('/orders/:id/cancel', orderController.cancelOrder);
 
-  // Customer routes
+  // Customer routes with validation
   router.get('/customers', customerController.getAllCustomers);
-  router.post('/customers', customerController.createCustomer);
+  router.post('/customers', ValidationPipe(CustumerEntity), customerController.createCustomer);
   router.get('/customers/:id', customerController.getCustomerById);
-  router.put('/customers/:id', customerController.updateCustomer);
+  router.put('/customers/:id', ValidationPipe(CustumerEntity), customerController.updateCustomer);
   router.delete('/customers/:id', customerController.deleteCustomer);
   router.get('/customers/:id/orders', customerController.getCustomerOrders);
 
