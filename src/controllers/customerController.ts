@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getDataSource } from "../lib/typeorm";
 import { CustumerEntity } from "../modules/customer/adapters/out/persistence/entities/Customer.entity";
 import { OrderEntity } from "../modules/orders/adapters/out/persistence/entities/Order.entity";
+import { QueryFailedError } from "typeorm";
 
 /**
  * Get all customers
@@ -57,6 +58,24 @@ export const createCustomer = async (req: Request, res: Response) => {
     const dataSource = await getDataSource();
     const customerRepository = dataSource.getRepository(CustumerEntity);
 
+    // Check if email already exists
+    const existingEmail = await customerRepository.findOne({
+      where: { email },
+    });
+
+    if (existingEmail) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    // Check if CPF already exists
+    const existingCPF = await customerRepository.findOne({
+      where: { cpf },
+    });
+
+    if (existingCPF) {
+      return res.status(400).json({ error: "CPF already registered" });
+    }
+
     const newCustomer = customerRepository.create({
       name,
       email,
@@ -68,6 +87,17 @@ export const createCustomer = async (req: Request, res: Response) => {
     return res.status(201).json(savedCustomer);
   } catch (error) {
     console.error("Error creating customer:", error);
+    if (error instanceof QueryFailedError) {
+      // Check for unique constraint violation
+      if (error.message.includes("duplicate key")) {
+        if (error.message.includes("email")) {
+          return res.status(400).json({ error: "Email already registered" });
+        }
+        if (error.message.includes("cpf")) {
+          return res.status(400).json({ error: "CPF already registered" });
+        }
+      }
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -91,6 +121,26 @@ export const updateCustomer = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Customer not found" });
     }
 
+    // If email is being updated, check if it's already in use by another customer
+    if (email && email !== existingCustomer.email) {
+      const emailExists = await customerRepository.findOne({
+        where: { email },
+      });
+      if (emailExists) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+    }
+
+    // If CPF is being updated, check if it's already in use by another customer
+    if (cpf && cpf !== existingCustomer.cpf) {
+      const cpfExists = await customerRepository.findOne({
+        where: { cpf },
+      });
+      if (cpfExists) {
+        return res.status(400).json({ error: "CPF already registered" });
+      }
+    }
+
     // Update fields
     if (name !== undefined) existingCustomer.name = name;
     if (email !== undefined) existingCustomer.email = email;
@@ -101,6 +151,17 @@ export const updateCustomer = async (req: Request, res: Response) => {
     return res.status(200).json(updatedCustomer);
   } catch (error) {
     console.error("Error updating customer:", error);
+    if (error instanceof QueryFailedError) {
+      // Check for unique constraint violation
+      if (error.message.includes("duplicate key")) {
+        if (error.message.includes("email")) {
+          return res.status(400).json({ error: "Email already registered" });
+        }
+        if (error.message.includes("cpf")) {
+          return res.status(400).json({ error: "CPF already registered" });
+        }
+      }
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };

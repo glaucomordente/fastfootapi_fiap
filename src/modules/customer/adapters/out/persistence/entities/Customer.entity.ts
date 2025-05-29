@@ -14,10 +14,10 @@ export class CustumerEntity {
   @Column({ length: 100, nullable: false })
   name: string;
 
-  @Column({ length: 100, nullable: false })
+  @Column({ length: 100, nullable: false, unique: true })
   email: string;
 
-  @Column({ length: 14, nullable: false })
+  @Column({ length: 14, nullable: false, unique: true })
   cpf: string;
 
   @Column({ length: 20, nullable: true })

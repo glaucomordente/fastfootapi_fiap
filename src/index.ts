@@ -33,15 +33,27 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: "http://localhost:3000/api",
         description: "Development server",
       },
     ],
+    components: {
+      schemas: {
+        Error: {
+          type: "object",
+          properties: {
+            error: {
+              type: "string",
+              description: "Error message",
+            },
+          },
+        },
+      },
+    },
   },
   apis: [
-    path.join(__dirname, "./routes/*.js"),
-    path.join(__dirname, "./routes/*.ts"),
-    path.join(__dirname, "./controllers/*.ts"),
+    path.resolve(__dirname, "./routes/index.js"),
+    path.resolve(__dirname, "./controllers/*.ts"),
   ],
 };
 

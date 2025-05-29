@@ -134,6 +134,10 @@ const customerController = require('../controllers/customerController');
  *         phone:
  *           type: string
  *           description: The phone number of the customer
+ *     
+ *     OrderStatus:
+ *       type: string
+ *       enum: [PENDING, PREPARING, READY, COMPLETED, CANCELLED]
  */
 
 /**
@@ -151,6 +155,12 @@ const customerController = require('../controllers/customerController');
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Category'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *   post:
  *     tags: [Categories]
  *     summary: Create a new category
@@ -162,11 +172,75 @@ const customerController = require('../controllers/customerController');
  *             $ref: '#/components/schemas/Category'
  *     responses:
  *       201:
- *         description: Category created successfully
- */
-
-/**
- * @swagger
+ *         description: Category created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Category'
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ * 
+ * /categories/{id}:
+ *   get:
+ *     tags: [Categories]
+ *     summary: Get category by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Category ID
+ *     responses:
+ *       200:
+ *         description: Category found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Category'
+ *       404:
+ *         description: Category not found
+ *   put:
+ *     tags: [Categories]
+ *     summary: Update category
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Category ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Category'
+ *     responses:
+ *       200:
+ *         description: Category updated
+ *       404:
+ *         description: Category not found
+ *   delete:
+ *     tags: [Categories]
+ *     summary: Delete category
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Category ID
+ *     responses:
+ *       204:
+ *         description: Category deleted
+ *       404:
+ *         description: Category not found
+ * 
  * /products:
  *   get:
  *     tags: [Products]
@@ -191,11 +265,82 @@ const customerController = require('../controllers/customerController');
  *             $ref: '#/components/schemas/Product'
  *     responses:
  *       201:
- *         description: Product created successfully
- */
-
-/**
- * @swagger
+ *         description: Product created
+ * 
+ * /products/{id}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get product by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Product found
+ *       404:
+ *         description: Product not found
+ *   put:
+ *     tags: [Products]
+ *     summary: Update product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       200:
+ *         description: Product updated
+ *       404:
+ *         description: Product not found
+ *   delete:
+ *     tags: [Products]
+ *     summary: Delete product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Product ID
+ *     responses:
+ *       204:
+ *         description: Product deleted
+ *       404:
+ *         description: Product not found
+ * 
+ * /products/category/{categoryId}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get products by category
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Category ID
+ *     responses:
+ *       200:
+ *         description: List of products in category
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ * 
  * /orders:
  *   get:
  *     tags: [Orders]
@@ -220,11 +365,70 @@ const customerController = require('../controllers/customerController');
  *             $ref: '#/components/schemas/Order'
  *     responses:
  *       201:
- *         description: Order created successfully
- */
-
-/**
- * @swagger
+ *         description: Order created
+ * 
+ * /orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get order by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order found
+ *       404:
+ *         description: Order not found
+ * 
+ * /orders/{id}/status:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Update order status
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 $ref: '#/components/schemas/OrderStatus'
+ *     responses:
+ *       200:
+ *         description: Order status updated
+ *       404:
+ *         description: Order not found
+ * 
+ * /orders/{id}/cancel:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Cancel order
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order cancelled
+ *       404:
+ *         description: Order not found
+ * 
  * /customers:
  *   get:
  *     tags: [Customers]
@@ -249,7 +453,83 @@ const customerController = require('../controllers/customerController');
  *             $ref: '#/components/schemas/Customer'
  *     responses:
  *       201:
- *         description: Customer created successfully
+ *         description: Customer created
+ * 
+ * /customers/{id}:
+ *   get:
+ *     tags: [Customers]
+ *     summary: Get customer by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Customer ID
+ *     responses:
+ *       200:
+ *         description: Customer found
+ *       404:
+ *         description: Customer not found
+ *   put:
+ *     tags: [Customers]
+ *     summary: Update customer
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Customer ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Customer'
+ *     responses:
+ *       200:
+ *         description: Customer updated
+ *       404:
+ *         description: Customer not found
+ *   delete:
+ *     tags: [Customers]
+ *     summary: Delete customer
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Customer ID
+ *     responses:
+ *       204:
+ *         description: Customer deleted
+ *       404:
+ *         description: Customer not found
+ * 
+ * /customers/{id}/orders:
+ *   get:
+ *     tags: [Customers]
+ *     summary: Get customer orders
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Customer ID
+ *     responses:
+ *       200:
+ *         description: List of customer orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Customer not found
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
