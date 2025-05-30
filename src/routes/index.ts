@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { CategoryModule } from '../modules/categories/CategoryModule';
 import { ProductModule } from '../modules/products/ProductModule';
-import { CustomerModule } from '../modules/customer/CustomerModule'; // Adicione esta linha
+import { CustomerModule } from '../modules/customer/CustomerModule';
+import { CarrinhoModule } from '../modules/carrinho/CarrinhoModule';
 
 /**
  * Setup routes with initialized modules
@@ -13,14 +14,15 @@ import { CustomerModule } from '../modules/customer/CustomerModule'; // Adicione
 export default function setupRoutes(
   categoryModule: CategoryModule,
   productModule: ProductModule,
-  customerModule: CustomerModule // Adicione este parâmetro
+  customerModule: CustomerModule
 ): Router {
   const router = Router();
   
   // Get controllers from initialized modules
   const categoryController = categoryModule.getController();
   const productController = productModule.getController();
-  const customerController = customerModule.getController(); // Adicione esta linha
+  const customerController = customerModule.getController();
+  const carrinhoController = new CarrinhoModule().getController();
 
   // Health check route
   router.get('/health', (req: Request, res: Response) => {
@@ -48,6 +50,12 @@ export default function setupRoutes(
   router.post('/customers', customerController.createCustomer.bind(customerController));
   router.put('/customers/:id', customerController.updateCustomer.bind(customerController));
   router.delete('/customers/:id', customerController.deleteCustomer.bind(customerController));
+
+  // Carrinho routes
+  router.post('/v1/carrinho/adicionar/lanche', carrinhoController.adicionarLanche.bind(carrinhoController));
+  router.get('/v1/carrinho/visualizar', carrinhoController.visualizarCarrinho.bind(carrinhoController));
+  router.delete('/v1/carrinho/remover', carrinhoController.removerItem.bind(carrinhoController));
+  router.post('/v1/carrinho/confirmar', carrinhoController.confirmarCarrinho.bind(carrinhoController));
 
   return router;
 }

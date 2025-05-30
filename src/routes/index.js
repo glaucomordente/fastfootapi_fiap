@@ -4,8 +4,12 @@ const categoryController = require('../controllers/categoryController');
 const productController = require('../controllers/productController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
+const { CarrinhoController } = require('../modules/carrinho/adapters/in/web/controllers/CarrinhoController');
+const { CarrinhoService } = require('../modules/carrinho/application/services/CarrinhoService');
+const { CarrinhoRepository } = require('../modules/carrinho/adapters/out/persistence/repositories/CarrinhoRepository');
 const { ValidationPipe } = require('../lib/validation.pipe');
 const { CustumerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
+const { getDataSource } = require('../lib/typeorm');
 
 /**
  * @swagger
@@ -18,6 +22,8 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *     description: Order management
  *   - name: Customers
  *     description: Customer management
+ *   - name: Carrinho
+ *     description: Shopping cart management
  */
 
 /**
@@ -532,6 +538,111 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *                 $ref: '#/components/schemas/Order'
  *       404:
  *         description: Customer not found
+ * 
+ * @swagger
+ * /v1/carrinho/adicionar/lanche:
+ *   post:
+ *     tags: [Carrinho]
+ *     summary: Adiciona um lanche ao carrinho
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id_sessao
+ *               - id_produto
+ *               - quantidade
+ *               - observacoes
+ *             properties:
+ *               id_sessao:
+ *                 type: string
+ *                 format: uuid
+ *               id_produto:
+ *                 type: integer
+ *               quantidade:
+ *                 type: integer
+ *               observacoes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Item adicionado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ * 
+ * /v1/carrinho/visualizar:
+ *   get:
+ *     tags: [Carrinho]
+ *     summary: Visualiza o carrinho atual
+ *     parameters:
+ *       - in: query
+ *         name: id_sessao
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Carrinho retornado com sucesso
+ *       400:
+ *         description: ID da sessão não fornecido
+ *       500:
+ *         description: Erro interno do servidor
+ * 
+ * /v1/carrinho/remover:
+ *   delete:
+ *     tags: [Carrinho]
+ *     summary: Remove um item do carrinho
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id_sessao
+ *               - id_item_carrinho
+ *             properties:
+ *               id_sessao:
+ *                 type: string
+ *                 format: uuid
+ *               id_item_carrinho:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Item removido com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ * 
+ * /v1/carrinho/confirmar:
+ *   post:
+ *     tags: [Carrinho]
+ *     summary: Confirma o carrinho atual
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id_sessao
+ *             properties:
+ *               id_sessao:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Carrinho confirmado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
@@ -568,6 +679,20 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   router.put('/customers/:id', ValidationPipe(CustumerEntity), customerController.updateCustomer);
   router.delete('/customers/:id', customerController.deleteCustomer);
   router.get('/customers/:id/orders', customerController.getCustomerOrders);
+
+  // Carrinho routes - inicializar DataSource antes
+  getDataSource().then(dataSource => {
+    const carrinhoRepository = new CarrinhoRepository(dataSource);
+    const carrinhoService = new CarrinhoService(carrinhoRepository);
+    const carrinhoController = new CarrinhoController(carrinhoService);
+
+    router.post('/v1/carrinho/adicionar/lanche', (req, res) => carrinhoController.adicionarLanche(req, res));
+    router.get('/v1/carrinho/visualizar', (req, res) => carrinhoController.visualizarCarrinho(req, res));
+    router.delete('/v1/carrinho/remover', (req, res) => carrinhoController.removerItem(req, res));
+    router.post('/v1/carrinho/confirmar', (req, res) => carrinhoController.confirmarCarrinho(req, res));
+  }).catch(err => {
+    console.error('Erro ao inicializar DataSource para rotas do carrinho:', err);
+  });
 
   return router;
 }

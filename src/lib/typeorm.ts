@@ -1,6 +1,9 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
+import { Carrinho } from '../modules/carrinho/adapters/out/persistence/entities/Carrinho';
+import { ItemCarrinho } from '../modules/carrinho/adapters/out/persistence/entities/ItemCarrinho';
+import { ProductEntity } from '../modules/products/adapters/out/persistence/entities/Product.entity';
 
 // Load environment variables
 dotenv.config();
@@ -12,13 +15,16 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.DB_PORT || '5432'),
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'fastfood',
+  database: process.env.DB_NAME || 'fastfood_db',
   synchronize: process.env.NODE_ENV !== 'production', // Auto-create database schema in non-production environments
   logging: process.env.NODE_ENV !== 'production',
   entities: [
-    'src/modules/**/adapters/out/persistence/entities/*.entity.ts'
+    'src/modules/**/adapters/out/persistence/entities/*.entity.ts',
+    Carrinho,
+    ItemCarrinho,
+    ProductEntity
   ],
-  migrations: ['src/migrations/*.ts'],
+  migrations: ['src/database/migrations/*.ts'],
   connectTimeoutMS: 10000
 });
 
