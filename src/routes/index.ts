@@ -77,6 +77,10 @@ export default function setupRoutes(
 
   // Customer routes
   router.get(
+    "/Customer",
+    customerController.getCustomerByCpf.bind(customerController)
+  );
+  router.get(
     "/customers",
     customerController.getAllCustomers.bind(customerController)
   );

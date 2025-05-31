@@ -153,4 +153,30 @@ export class CustomerController {
       res.status(500).json({ error: "Failed to fetch customer" });
     }
   }
+
+  async getCustomerByCpf(req: Request, res: Response): Promise<void> {
+    try {
+      const { cpf } = req.query;
+
+      if (!cpf) {
+        res.status(400).json({ error: "CPF parameter is required" });
+        return;
+      }
+
+      const dataSource = await getDataSource();
+      const customerRepository = dataSource.getRepository(CustumerEntity);
+
+      const customer = await customerRepository.findOne({
+        where: { cpf: cpf as string },
+      });
+
+      if (customer) {
+        res.json(customer);
+      } else {
+        res.status(404).json({ error: "User not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer" });
+    }
+  }
 }
