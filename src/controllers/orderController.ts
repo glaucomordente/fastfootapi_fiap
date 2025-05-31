@@ -476,7 +476,25 @@ export const getReadyOrders = async (req: Request, res: Response) => {
       where: { status: OrderStatus.READY },
       relations: ['items', 'items.product', 'customer']
     });
-    return res.status(200).json(orders);
+
+    // Adiciona o tempo de preparo para cada pedido
+    const ordersWithPrepTime = orders.map(order => {
+      const now = new Date();
+      const updatedAt = new Date(order.updatedAt);
+      const diffInMinutes = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60));
+      
+      // Formata o tempo em HH:mm
+      const hours = Math.floor(diffInMinutes / 60);
+      const minutes = diffInMinutes % 60;
+      const prepTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      
+      return {
+        ...order,
+        prepTime
+      };
+    });
+
+    return res.status(200).json(ordersWithPrepTime);
   } catch (error) {
     console.error('Erro ao buscar pedidos prontos:', error);
     return res.status(500).json({ error: 'Erro interno do servidor' });
