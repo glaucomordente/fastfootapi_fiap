@@ -525,3 +525,42 @@ export const startPreparingOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
+
+export const completeOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const dataSource = await getDataSource();
+    const orderRepository = dataSource.getRepository(OrderEntity);
+    
+    const existingOrder = await orderRepository.findOne({
+      where: { id: Number(id) }
+    });
+    
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Pedido não encontrado' });
+    }
+    
+    // Validar se o pedido pode ser finalizado
+    if (existingOrder.status === OrderStatus.CANCELLED) {
+      return res.status(400).json({ error: 'Não é possível finalizar um pedido cancelado' });
+    }
+    
+    if (existingOrder.status === OrderStatus.COMPLETED) {
+      return res.status(400).json({ error: 'Pedido já está finalizado' });
+    }
+    
+    if (existingOrder.status === OrderStatus.PENDING) {
+      return res.status(400).json({ error: 'Pedido ainda não foi iniciado' });
+    }
+    
+    // Atualizar status para finalizado
+    existingOrder.status = OrderStatus.COMPLETED;
+    
+    const updatedOrder = await orderRepository.save(existingOrder);
+    return res.status(200).json(updatedOrder);
+  } catch (error) {
+    console.error('Erro ao finalizar pedido:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};

@@ -800,6 +800,57 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *         description: Email or CPF is required
  *       404:
  *         description: Customer not found
+ * 
+ * @swagger
+ * /orders/{id}/complete:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Finalizar pedido
+ *     description: Altera o status do pedido para COMPLETED
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     responses:
+ *       200:
+ *         description: Pedido finalizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Erro de validação
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
@@ -831,6 +882,7 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   router.put('/orders/:id/cancel', orderController.cancelOrder);
   router.put('/orders/:id/finalize', orderController.finalizeOrder);
   router.put('/orders/:id/prepare', orderController.startPreparingOrder);
+  router.put('/orders/:id/complete', orderController.completeOrder);
   router.post('/orders/:id/items', orderController.addOrderItem);
   router.delete('/orders/:id/items', orderController.removeOrderItem);
 
