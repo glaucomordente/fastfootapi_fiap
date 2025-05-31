@@ -1,3 +1,5 @@
+import { CustomerValidations } from "../validations/CustomerValidations";
+
 /**
  * Customer Entity
  *
@@ -18,15 +20,18 @@ export class Customer {
     cpf: string,
     phone?: string | null
   ) {
-    // Validate inputs
-    if (name.trim().length === 0) {
+    // Validate inputs using domain validations
+    if (!CustomerValidations.validateName(name)) {
       throw new Error("Customer name cannot be empty");
     }
-    if (email.trim().length === 0) {
-      throw new Error("Customer email cannot be empty");
+    if (!CustomerValidations.validateEmail(email)) {
+      throw new Error("Invalid email format");
     }
-    if (cpf.trim().length === 0) {
-      throw new Error("Customer CPF cannot be empty");
+    if (!CustomerValidations.validateCPF(cpf)) {
+      throw new Error("Invalid CPF format");
+    }
+    if (phone && !CustomerValidations.validatePhone(phone)) {
+      throw new Error("Invalid phone format");
     }
 
     this._id = id;
@@ -59,27 +64,30 @@ export class Customer {
 
   // Business methods
   updateName(name: string): void {
-    if (name.trim().length === 0) {
+    if (!CustomerValidations.validateName(name)) {
       throw new Error("Customer name cannot be empty");
     }
     this._name = name;
   }
 
   updateEmail(email: string): void {
-    if (email.trim().length === 0) {
-      throw new Error("Customer email cannot be empty");
+    if (!CustomerValidations.validateEmail(email)) {
+      throw new Error("Invalid email format");
     }
     this._email = email;
   }
 
   updateCpf(cpf: string): void {
-    if (cpf.trim().length === 0) {
-      throw new Error("Customer CPF cannot be empty");
+    if (!CustomerValidations.validateCPF(cpf)) {
+      throw new Error("Invalid CPF format");
     }
     this._cpf = cpf;
   }
 
   updatePhone(phone?: string | null): void {
+    if (phone && !CustomerValidations.validatePhone(phone)) {
+      throw new Error("Invalid phone format");
+    }
     this._phone = phone ?? null;
   }
 
