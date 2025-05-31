@@ -203,6 +203,7 @@ export enum OrderStatus {
   READY = 'READY',
   PAYMENT = 'PAYMENT',
   COMPLETED = 'COMPLETED',
+  DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED'
 }
 
