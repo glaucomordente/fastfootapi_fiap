@@ -343,3 +343,92 @@ export const addOrderItem = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const removeOrderItem = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { itemId } = req.body;
+    
+    if (!itemId) {
+      return res.status(400).json({ error: 'Item ID is required' });
+    }
+    
+    const dataSource = await getDataSource();
+    const orderRepository = dataSource.getRepository(OrderEntity);
+    const orderItemRepository = dataSource.getRepository(OrderItemEntity);
+    const productRepository = dataSource.getRepository(ProductEntity);
+    
+    // Start a transaction
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+      // Validate order exists and is not cancelled or completed
+      const order = await orderRepository.findOne({
+        where: { id: Number(id) }
+      });
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
+      if (order.status === OrderStatus.CANCELLED || order.status === OrderStatus.COMPLETED) {
+        return res.status(400).json({ error: 'Cannot remove items from a cancelled or completed order' });
+      }
+      
+      // Find the order item
+      const orderItem = await orderItemRepository.findOne({
+        where: { 
+          id: Number(itemId),
+          orderId: order.id
+        }
+      });
+      
+      if (!orderItem) {
+        return res.status(404).json({ error: 'Order item not found' });
+      }
+      
+      // Find the product to restore stock
+      const product = await productRepository.findOne({
+        where: { id: orderItem.productId }
+      });
+      
+      if (product) {
+        // Restore product stock
+        product.stock += orderItem.quantity;
+        await queryRunner.manager.save(product);
+      }
+      
+      // Update order total amount
+      const currentTotal = Number(order.totalAmount) || 0;
+      const itemTotal = Number(orderItem.unitPrice * orderItem.quantity) || 0;
+      order.totalAmount = Number((currentTotal - itemTotal).toFixed(2));
+      await queryRunner.manager.save(order);
+      
+      // Remove the order item
+      await queryRunner.manager.remove(orderItem);
+      
+      // Commit transaction
+      await queryRunner.commitTransaction();
+      
+      // Return the complete order with items
+      const completeOrder = await orderRepository.findOne({
+        where: { id: order.id },
+        relations: ['items', 'items.product', 'customer']
+      });
+      
+      return res.status(200).json(completeOrder);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
+  } catch (error) {
+    console.error('Error removing item from order:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};

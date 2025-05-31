@@ -544,6 +544,41 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *         description: Pedido ou produto não encontrado
  *       500:
  *         description: Erro interno do servidor
+ *   delete:
+ *     tags: [Orders]
+ *     summary: Remover item de um pedido
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - itemId
+ *             properties:
+ *               itemId:
+ *                 type: integer
+ *                 description: ID do item a ser removido do pedido
+ *     responses:
+ *       200:
+ *         description: Item removido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Dados inválidos ou pedido cancelado/completo
+ *       404:
+ *         description: Pedido ou item não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  * 
  * /customers:
  *   get:
@@ -702,6 +737,7 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   router.put('/orders/:id/status', orderController.updateOrderStatus);
   router.put('/orders/:id/cancel', orderController.cancelOrder);
   router.post('/orders/:id/items', orderController.addOrderItem);
+  router.delete('/orders/:id/items', orderController.removeOrderItem);
 
   // Customer routes with validation
   router.get('/customers', customerController.getAllCustomers);
