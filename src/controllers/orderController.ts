@@ -467,3 +467,61 @@ export const finalizeOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
+
+export const getReadyOrders = async (req: Request, res: Response) => {
+  try {
+    const dataSource = await getDataSource();
+    const orderRepository = dataSource.getRepository(OrderEntity);
+    const orders = await orderRepository.find({
+      where: { status: OrderStatus.READY },
+      relations: ['items', 'items.product', 'customer']
+    });
+    return res.status(200).json(orders);
+  } catch (error) {
+    console.error('Erro ao buscar pedidos prontos:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const startPreparingOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const dataSource = await getDataSource();
+    const orderRepository = dataSource.getRepository(OrderEntity);
+    
+    const existingOrder = await orderRepository.findOne({
+      where: { id: Number(id) }
+    });
+    
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Pedido não encontrado' });
+    }
+    
+    // Validar se o pedido pode começar a ser preparado
+    if (existingOrder.status === OrderStatus.CANCELLED) {
+      return res.status(400).json({ error: 'Não é possível preparar um pedido cancelado' });
+    }
+    
+    if (existingOrder.status === OrderStatus.COMPLETED) {
+      return res.status(400).json({ error: 'Não é possível preparar um pedido já finalizado' });
+    }
+    
+    if (existingOrder.status === OrderStatus.READY) {
+      return res.status(400).json({ error: 'Pedido já está pronto' });
+    }
+    
+    if (existingOrder.status === OrderStatus.PREPARING) {
+      return res.status(400).json({ error: 'Pedido já está em preparo' });
+    }
+    
+    // Atualizar status para preparando
+    existingOrder.status = OrderStatus.PREPARING;
+    
+    const updatedOrder = await orderRepository.save(existingOrder);
+    return res.status(200).json(updatedOrder);
+  } catch (error) {
+    console.error('Erro ao iniciar preparo do pedido:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};

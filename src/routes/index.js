@@ -522,6 +522,81 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *       404:
  *         description: Order not found
  * 
+ * /orders/ready:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Listar pedidos prontos
+ *     description: Retorna todos os pedidos com status READY
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos prontos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ * 
+ * /orders/{id}/prepare:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Iniciar preparo do pedido
+ *     description: Altera o status do pedido para PREPARING
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     responses:
+ *       200:
+ *         description: Pedido iniciado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Erro de validação
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ * 
  * /orders/{id}/items:
  *   post:
  *     tags: [Orders]
@@ -749,11 +824,13 @@ function setupRoutes(categoryModule, productModule, customerModule) {
 
   // Orders routes
   router.get('/orders', orderController.getAllOrders);
+  router.get('/orders/ready', orderController.getReadyOrders);
   router.post('/orders', orderController.createOrder);
   router.get('/orders/:id', orderController.getOrderById);
   router.put('/orders/:id/status', orderController.updateOrderStatus);
   router.put('/orders/:id/cancel', orderController.cancelOrder);
   router.put('/orders/:id/finalize', orderController.finalizeOrder);
+  router.put('/orders/:id/prepare', orderController.startPreparingOrder);
   router.post('/orders/:id/items', orderController.addOrderItem);
   router.delete('/orders/:id/items', orderController.removeOrderItem);
 
