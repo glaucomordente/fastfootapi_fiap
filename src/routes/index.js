@@ -505,6 +505,23 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *       404:
  *         description: Order not found
  * 
+ * /orders/{id}/finalize:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Finalize order
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order finalized
+ *       404:
+ *         description: Order not found
+ * 
  * /orders/{id}/items:
  *   post:
  *     tags: [Orders]
@@ -736,6 +753,7 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   router.get('/orders/:id', orderController.getOrderById);
   router.put('/orders/:id/status', orderController.updateOrderStatus);
   router.put('/orders/:id/cancel', orderController.cancelOrder);
+  router.put('/orders/:id/finalize', orderController.finalizeOrder);
   router.post('/orders/:id/items', orderController.addOrderItem);
   router.delete('/orders/:id/items', orderController.removeOrderItem);
 
