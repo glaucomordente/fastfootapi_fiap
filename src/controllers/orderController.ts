@@ -253,3 +253,93 @@ export const cancelOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const addOrderItem = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { productId, observation } = req.body;
+    
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+    
+    const dataSource = await getDataSource();
+    const orderRepository = dataSource.getRepository(OrderEntity);
+    const productRepository = dataSource.getRepository(ProductEntity);
+    
+    // Start a transaction
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+      // Validate order exists and is not cancelled or completed
+      const order = await orderRepository.findOne({
+        where: { id: Number(id) }
+      });
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
+      if (order.status === OrderStatus.CANCELLED || order.status === OrderStatus.COMPLETED) {
+        return res.status(400).json({ error: 'Cannot add items to a cancelled or completed order' });
+      }
+      
+      // Validate product exists and has stock
+      const product = await productRepository.findOne({
+        where: { id: Number(productId) }
+      });
+      
+      if (!product) {
+        return res.status(404).json({ error: `Product with ID ${productId} not found` });
+      }
+      
+      if (product.stock < 1) {
+        return res.status(400).json({ error: `Not enough stock for product ${product.name}` });
+      }
+      
+      // Create order item
+      const orderItem = new OrderItemEntity();
+      orderItem.orderId = order.id;
+      orderItem.productId = Number(productId);
+      orderItem.quantity = 1; // Default quantity is 1
+      orderItem.unitPrice = product.price;
+      orderItem.observation = observation || null;
+      
+      // Update product stock
+      product.stock -= 1;
+      await queryRunner.manager.save(product);
+      
+      // Update order total amount
+      const currentTotal = Number(order.totalAmount) || 0;
+      const itemPrice = Number(orderItem.unitPrice) || 0;
+      order.totalAmount = Number((currentTotal + itemPrice).toFixed(2));
+      await queryRunner.manager.save(order);
+      
+      // Save order item
+      const savedOrderItem = await queryRunner.manager.save(orderItem);
+      
+      // Commit transaction
+      await queryRunner.commitTransaction();
+      
+      // Return the complete order with items
+      const completeOrder = await orderRepository.findOne({
+        where: { id: order.id },
+        relations: ['items', 'items.product', 'customer']
+      });
+      
+      return res.status(201).json(completeOrder);
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      // Release query runner
+      await queryRunner.release();
+    }
+  } catch (error) {
+    console.error('Error adding item to order:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
