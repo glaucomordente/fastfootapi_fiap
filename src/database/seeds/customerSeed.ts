@@ -1,12 +1,12 @@
-import { CustumerEntity } from "../../modules/customer/adapters/out/persistence/entities/Customer.entity";
-import { DataSource } from "typeorm";
+import { CustomerEntity } from "../../modules/customer/adapters/out/persistence/entities/Customer.entity";
+import { getDataSource } from "../../lib/typeorm";
 
 /**
  * Seed initial customers into the database
- * @param dataSource TypeORM DataSource
  */
-export const seedCustomers = async (dataSource: DataSource): Promise<void> => {
-  const customerRepository = dataSource.getRepository(CustumerEntity);
+export async function seedCustomers() {
+  const dataSource = await getDataSource();
+  const customerRepository = dataSource.getRepository(CustomerEntity);
 
   // Check if customers already exist
   const count = await customerRepository.count();
@@ -19,15 +19,15 @@ export const seedCustomers = async (dataSource: DataSource): Promise<void> => {
   const customers = [
     {
       name: "João Silva",
-      email: "joao@email.com",
-      cpf: "12345678901",
-      phone: "11999999999",
+      email: "joao.silva@email.com",
+      cpf: "12345678900",
+      phone: "11999999999"
     },
     {
-      name: "Maria Souza",
-      email: "maria@email.com",
+      name: "Maria Santos",
+      email: "maria.santos@email.com",
       cpf: "98765432100",
-      phone: "11988888888",
+      phone: "11988888888"
     },
     {
       name: "Carlos Pereira",
@@ -43,7 +43,19 @@ export const seedCustomers = async (dataSource: DataSource): Promise<void> => {
     },
   ];
 
-  // Insert customers
-  await customerRepository.insert(customers);
+  for (const customer of customers) {
+    const existingCustomer = await customerRepository.findOne({
+      where: [
+        { email: customer.email },
+        { cpf: customer.cpf }
+      ]
+    });
+
+    if (!existingCustomer) {
+      const newCustomer = customerRepository.create(customer);
+      await customerRepository.save(newCustomer);
+    }
+  }
+
   console.log(`Seeded ${customers.length} customers successfully`);
-};
+}

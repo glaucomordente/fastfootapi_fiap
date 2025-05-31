@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { OrderStatus } from '../../../../domain/entities/Order';
 import { OrderItemEntity } from './OrderItem.entity';
+import { CustomerEntity } from '../../../../../customer/adapters/out/persistence/entities/Customer.entity';
 
 /**
  * Order Entity for TypeORM
@@ -12,8 +13,12 @@ export class OrderEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'customer_name', length: 100, nullable: false })
-  customerName: string;
+  @Column({ name: 'customer_id' })
+  customerId: number;
+
+  @ManyToOne(() => CustomerEntity)
+  @JoinColumn({ name: 'customer_id' })
+  customer: CustomerEntity;
 
   @Column({
     type: 'enum',
@@ -22,7 +27,7 @@ export class OrderEntity {
   })
   status: OrderStatus;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2, nullable: false })
+  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalAmount: number;
 
   @OneToMany(() => OrderItemEntity, orderItem => orderItem.order, {

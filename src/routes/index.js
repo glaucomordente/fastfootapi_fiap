@@ -4,8 +4,8 @@ const categoryController = require('../controllers/categoryController');
 const productController = require('../controllers/productController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
-const { ValidationPipe } = require('../lib/validation.pipe');
-const { CustumerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
+// const { ValidationPipe } = require('../lib/validation.pipe');
+const { CustomerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
 
 /**
  * @swagger
@@ -113,6 +113,9 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *           type: number
  *           format: float
  *           description: The unit price of the product
+ *         observation:
+ *           type: string
+ *           description: Observações específicas para este item do pedido
  *     
  *     Customer:
  *       type: object
@@ -358,16 +361,87 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *                 $ref: '#/components/schemas/Order'
  *   post:
  *     tags: [Orders]
- *     summary: Create a new order
+ *     summary: Iniciar um novo pedido
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Order'
+ *             type: object
+ *             required:
+ *               - customerId
+ *             properties:
+ *               customerId:
+ *                 type: integer
+ *                 description: ID do cliente que fez o pedido
+ *               items:
+ *                 type: array
+ *                 description: Lista de itens do pedido (opcional)
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - productId
+ *                     - quantity
+ *                   properties:
+ *                     productId:
+ *                       type: integer
+ *                       description: ID do produto
+ *                     quantity:
+ *                       type: integer
+ *                       description: Quantidade do produto
+ *                     observation:
+ *                       type: string
+ *                       description: Observações específicas para este item do pedido
  *     responses:
  *       201:
- *         description: Order created
+ *         description: Pedido iniciado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: ID do pedido criado
+ *                 customerId:
+ *                   type: integer
+ *                   description: ID do cliente
+ *                 status:
+ *                   type: string
+ *                   enum: [PENDING, PREPARING, READY, COMPLETED, CANCELLED]
+ *                   description: Status do pedido
+ *                 totalAmount:
+ *                   type: number
+ *                   format: float
+ *                   description: Valor total do pedido (0.00 se não houver itens)
+ *                 items:
+ *                   type: array
+ *                   description: Lista de itens do pedido (vazia se não houver itens)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID do item do pedido
+ *                       productId:
+ *                         type: integer
+ *                         description: ID do produto
+ *                       quantity:
+ *                         type: integer
+ *                         description: Quantidade do produto
+ *                       unitPrice:
+ *                         type: number
+ *                         format: float
+ *                         description: Preço unitário do produto
+ *                       observation:
+ *                         type: string
+ *                         description: Observações específicas para este item do pedido
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Cliente não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  * 
  * /orders/{id}:
  *   get:
@@ -590,10 +664,10 @@ function setupRoutes(categoryModule, productModule, customerModule) {
 
   // Customer routes with validation
   router.get('/customers', customerController.getAllCustomers);
-  router.post('/customers', ValidationPipe(CustumerEntity), customerController.createCustomer);
+  router.post('/customers', customerController.createCustomer);
   router.get('/customers/search', customerController.getCustomer);
   router.get('/customers/:id', customerController.getCustomerById);
-  router.put('/customers/:id', ValidationPipe(CustumerEntity), customerController.updateCustomer);
+  router.put('/customers/:id', customerController.updateCustomer);
   router.delete('/customers/:id', customerController.deleteCustomer);
   router.get('/customers/:id/orders', customerController.getCustomerOrders);
 

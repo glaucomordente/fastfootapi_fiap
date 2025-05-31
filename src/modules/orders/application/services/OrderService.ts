@@ -24,42 +24,48 @@ export class OrderService implements OrderUseCase {
   }
 
   async createOrder(orderData: CreateOrderDTO): Promise<OrderDTO> {
-    // Validate that all products exist
-    const productIds = orderData.items.map(item => item.productId);
-    const validProductIds = await this.orderRepository.validateProducts(productIds);
-    
-    // Check if any products are invalid
-    const invalidProductIds = productIds.filter(id => !validProductIds.includes(id));
-    if (invalidProductIds.length > 0) {
-      throw new Error(`Products with IDs ${invalidProductIds.join(', ')} not found`);
-    }
-    
-    // Get product prices
-    const productPrices = await this.orderRepository.getProductPrices(productIds);
-    
-    // Create order items
-    const orderItems: OrderItem[] = orderData.items.map(item => {
-      const price = productPrices.get(item.productId);
-      if (!price) {
-        throw new Error(`Price not found for product ${item.productId}`);
+    let orderItems: OrderItem[] = [];
+    let totalAmount = 0;
+
+    if (orderData.items && orderData.items.length > 0) {
+      // Validate that all products exist
+      const productIds = orderData.items.map(item => item.productId);
+      const validProductIds = await this.orderRepository.validateProducts(productIds);
+      
+      // Check if any products are invalid
+      const invalidProductIds = productIds.filter(id => !validProductIds.includes(id));
+      if (invalidProductIds.length > 0) {
+        throw new Error(`Products with IDs ${invalidProductIds.join(', ')} not found`);
       }
       
-      return new OrderItem(
-        null,
-        item.productId,
-        item.quantity,
-        price,
-        null
-      );
-    });
-    
-    // Calculate total amount
-    const totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      // Get product prices
+      const productPrices = await this.orderRepository.getProductPrices(productIds);
+      
+      // Create order items
+      orderItems = orderData.items.map(item => {
+        const price = productPrices.get(item.productId);
+        if (!price) {
+          throw new Error(`Price not found for product ${item.productId}`);
+        }
+        
+        return new OrderItem(
+          null,
+          item.productId,
+          item.quantity,
+          price,
+          null,
+          item.observation || null
+        );
+      });
+      
+      // Calculate total amount
+      totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    }
     
     // Create order entity with validation
     const order = new Order(
       null,
-      orderData.customerName,
+      orderData.customerId,
       OrderStatus.PENDING,
       totalAmount,
       orderItems

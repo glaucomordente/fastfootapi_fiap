@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { CustomerUseCase } from "../../../domain/ports/in/CustumerUseCase";
+import { CustomerUseCase } from "../../../domain/ports/in/CustomerUseCase";
 import { getDataSource } from "../../../../../lib/typeorm";
-import { CustumerEntity } from "../../../adapters/out/persistence/entities/Customer.entity";
+import { CustomerEntity } from "../../../adapters/out/persistence/entities/Customer.entity";
 import { OrderEntity } from "../../../../orders/adapters/out/persistence/entities/Order.entity";
 
 /**
@@ -11,7 +11,11 @@ import { OrderEntity } from "../../../../orders/adapters/out/persistence/entitie
  * It translates HTTP requests into calls to the CustomerUseCase (input port).
  */
 export class CustomerController {
-  constructor(private readonly customerUseCase: CustomerUseCase) {}
+  private customerUseCase: CustomerUseCase;
+
+  constructor(customerUseCase: CustomerUseCase) {
+    this.customerUseCase = customerUseCase;
+  }
 
   /**
    * Get all customers
@@ -32,13 +36,13 @@ export class CustomerController {
     try {
       const id = parseInt(req.params.id);
       const customer = await this.customerUseCase.getCustomerById(id);
-      if (customer) {
-        res.json(customer);
-      } else {
-        res.status(404).json({ error: "Customer not found" });
+      if (!customer) {
+        res.status(404).json({ message: "Cliente não encontrado" });
+        return;
       }
+      res.json(customer);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customer" });
+      res.status(500).json({ message: error.message });
     }
   }
 
@@ -50,11 +54,7 @@ export class CustomerController {
       const customer = await this.customerUseCase.createCustomer(req.body);
       res.status(201).json(customer);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: "Failed to create customer" });
-      }
+      res.status(400).json({ message: error.message });
     }
   }
 
@@ -65,17 +65,13 @@ export class CustomerController {
     try {
       const id = parseInt(req.params.id);
       const customer = await this.customerUseCase.updateCustomer(id, req.body);
-      if (customer) {
-        res.json(customer);
-      } else {
-        res.status(404).json({ error: "Customer not found" });
+      if (!customer) {
+        res.status(404).json({ message: "Cliente não encontrado" });
+        return;
       }
+      res.json(customer);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: "Failed to update customer" });
-      }
+      res.status(400).json({ message: error.message });
     }
   }
 
@@ -85,14 +81,10 @@ export class CustomerController {
   async deleteCustomer(req: Request, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
-      const success = await this.customerUseCase.deleteCustomer(id);
-      if (success) {
-        res.status(204).send();
-      } else {
-        res.status(404).json({ error: "Customer not found" });
-      }
+      await this.customerUseCase.deleteCustomer(id);
+      res.status(204).send();
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete customer" });
+      res.status(500).json({ message: error.message });
     }
   }
 
@@ -100,23 +92,21 @@ export class CustomerController {
     try {
       const id = parseInt(req.params.id);
       const dataSource = await getDataSource();
-      const customerRepository = dataSource.getRepository(CustumerEntity);
-      const orderRepository = dataSource.getRepository(OrderEntity);
+      const customerRepository = dataSource.getRepository(CustomerEntity);
 
-      const customer = await customerRepository.findOne({ where: { id } });
+      const customer = await customerRepository.findOne({
+        where: { id },
+        relations: ['orders', 'orders.items', 'orders.items.product']
+      });
+
       if (!customer) {
-        res.status(404).json({ error: "Customer not found" });
+        res.status(404).json({ message: "Cliente não encontrado" });
         return;
       }
 
-      const orders = await orderRepository.find({
-        where: { customerName: customer.name },
-        relations: ["items", "items.product"],
-      });
-
-      res.json(orders);
+      res.json(customer.orders);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customer orders" });
+      res.status(500).json({ message: error.message });
     }
   }
 
@@ -130,9 +120,9 @@ export class CustomerController {
       }
 
       const dataSource = await getDataSource();
-      const customerRepository = dataSource.getRepository(CustumerEntity);
+      const customerRepository = dataSource.getRepository(CustomerEntity);
 
-      let customer: CustumerEntity | null = null;
+      let customer: CustomerEntity | null = null;
 
       if (cpf) {
         customer = await customerRepository.findOne({
@@ -156,27 +146,19 @@ export class CustomerController {
 
   async getCustomerByCpf(req: Request, res: Response): Promise<void> {
     try {
-      const { cpf } = req.query;
-
-      if (!cpf) {
-        res.status(400).json({ error: "CPF parameter is required" });
+      const cpf = req.params.cpf;
+      const dataSource = await getDataSource();
+      const customerRepository = dataSource.getRepository(CustomerEntity);
+      const customer = await customerRepository.findOne({ where: { cpf } });
+      
+      if (!customer) {
+        res.status(404).json({ message: "Cliente não encontrado" });
         return;
       }
-
-      const dataSource = await getDataSource();
-      const customerRepository = dataSource.getRepository(CustumerEntity);
-
-      const customer = await customerRepository.findOne({
-        where: { cpf: cpf as string },
-      });
-
-      if (customer) {
-        res.json(customer);
-      } else {
-        res.status(404).json({ error: "User not found" });
-      }
+      
+      res.json(customer);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customer" });
+      res.status(500).json({ message: error.message });
     }
   }
 }

@@ -1,7 +1,12 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { CategoryModule } from "../modules/categories/CategoryModule";
 import { ProductModule } from "../modules/products/ProductModule";
 import { CustomerModule } from "../modules/customer/CustomerModule";
+import { CustomerController } from "../modules/customer/adapters/in/web/CustomerController";
+import { CustomerService } from "../modules/customer/application/services/CustomerService";
+import { TypeORMCustomerRepository } from "../modules/customer/adapters/out/persistence/TypeORMCustomerRepository";
+import { getDataSource } from "../lib/typeorm";
+// import { validationMiddleware } from "../lib/validation.pipe";
 
 /**
  * Setup routes with initialized modules
@@ -10,17 +15,20 @@ import { CustomerModule } from "../modules/customer/CustomerModule";
  * @param customerModule Initialized CustomerModule
  * @returns Express router
  */
-export default function setupRoutes(
+export default async function setupRoutes(
   categoryModule: CategoryModule,
   productModule: ProductModule,
   customerModule: CustomerModule
-): Router {
+): Promise<Router> {
   const router = Router();
 
   // Get controllers from initialized modules
   const categoryController = categoryModule.getController();
   const productController = productModule.getController();
-  const customerController = customerModule.getController();
+  const dataSource = await getDataSource();
+  const customerRepository = new TypeORMCustomerRepository(dataSource);
+  const customerService = new CustomerService(customerRepository);
+  const customerController = new CustomerController(customerService);
 
   // Health check route
   router.get("/health", (req: Request, res: Response) => {
@@ -28,86 +36,35 @@ export default function setupRoutes(
   });
 
   // Category routes
-  router.get(
-    "/categories",
-    categoryController.getAllCategories.bind(categoryController)
-  );
-  router.get(
-    "/categories/:id",
-    categoryController.getCategoryById.bind(categoryController)
-  );
-  router.post(
-    "/categories",
-    categoryController.createCategory.bind(categoryController)
-  );
-  router.put(
-    "/categories/:id",
-    categoryController.updateCategory.bind(categoryController)
-  );
-  router.delete(
-    "/categories/:id",
-    categoryController.deleteCategory.bind(categoryController)
-  );
+  router.get("/categories", categoryController.getAllCategories.bind(categoryController));
+  router.get("/categories/:id", categoryController.getCategoryById.bind(categoryController));
+  router.post("/categories", categoryController.createCategory.bind(categoryController));
+  router.put("/categories/:id", categoryController.updateCategory.bind(categoryController));
+  router.delete("/categories/:id", categoryController.deleteCategory.bind(categoryController));
 
   // Product routes
-  router.get(
-    "/products",
-    productController.getAllProducts.bind(productController)
-  );
-  router.get(
-    "/products/:id",
-    productController.getProductById.bind(productController)
-  );
-  router.get(
-    "/products/category/:categoryId",
-    productController.getProductsByCategory.bind(productController)
-  );
-  router.post(
-    "/products",
-    productController.createProduct.bind(productController)
-  );
-  router.put(
-    "/products/:id",
-    productController.updateProduct.bind(productController)
-  );
-  router.delete(
-    "/products/:id",
-    productController.deleteProduct.bind(productController)
-  );
+  router.get("/products", productController.getAllProducts.bind(productController));
+  router.get("/products/:id", productController.getProductById.bind(productController));
+  router.get("/products/category/:categoryId", productController.getProductsByCategory.bind(productController));
+  router.post("/products", productController.createProduct.bind(productController));
+  router.put("/products/:id", productController.updateProduct.bind(productController));
+  router.delete("/products/:id", productController.deleteProduct.bind(productController));
 
   // Customer routes
-  router.get(
-    "/Customer",
-    customerController.getCustomerByCpf.bind(customerController)
-  );
-  router.get(
-    "/customers",
-    customerController.getAllCustomers.bind(customerController)
-  );
-  router.get(
-    "/customers/search",
-    customerController.getCustomer.bind(customerController)
-  );
-  router.get(
-    "/customers/:id",
-    customerController.getCustomerById.bind(customerController)
-  );
-  router.post(
-    "/customers",
+  router.get("/Customer", customerController.getCustomerByCpf.bind(customerController));
+  router.get("/customers", customerController.getAllCustomers.bind(customerController));
+  router.get("/customers/search", customerController.getCustomer.bind(customerController));
+  router.get("/customers/:id", customerController.getCustomerById.bind(customerController));
+  router.post("/customers", 
+    // validationMiddleware.validateCustomer,
     customerController.createCustomer.bind(customerController)
   );
-  router.put(
-    "/customers/:id",
+  router.put("/customers/:id", 
+    // validationMiddleware.validateCustomer,
     customerController.updateCustomer.bind(customerController)
   );
-  router.delete(
-    "/customers/:id",
-    customerController.deleteCustomer.bind(customerController)
-  );
-  router.get(
-    "/customers/:id/orders",
-    customerController.getCustomerOrders.bind(customerController)
-  );
+  router.delete("/customers/:id", customerController.deleteCustomer.bind(customerController));
+  router.get("/customers/:id/orders", customerController.getCustomerOrders.bind(customerController));
 
   return router;
 }

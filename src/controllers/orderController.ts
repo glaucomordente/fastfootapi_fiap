@@ -4,13 +4,14 @@ import { OrderEntity } from '../modules/orders/adapters/out/persistence/entities
 import { OrderItemEntity } from '../modules/orders/adapters/out/persistence/entities/OrderItem.entity';
 import { ProductEntity } from '../modules/products/adapters/out/persistence/entities/Product.entity';
 import { OrderStatus } from '../modules/orders/domain/entities/Order';
+import { CustomerEntity } from '../modules/customer/adapters/out/persistence/entities/Customer.entity';
 
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
     const dataSource = await getDataSource();
     const orderRepository = dataSource.getRepository(OrderEntity);
     const orders = await orderRepository.find({
-      relations: ['items', 'items.product']
+      relations: ['items', 'items.product', 'customer']
     });
     return res.status(200).json(orders);
   } catch (error) {
@@ -26,7 +27,7 @@ export const getOrderById = async (req: Request, res: Response) => {
     const orderRepository = dataSource.getRepository(OrderEntity);
     const order = await orderRepository.findOne({
       where: { id: Number(id) },
-      relations: ['items', 'items.product']
+      relations: ['items', 'items.product', 'customer']
     });
     
     if (!order) {
@@ -42,16 +43,17 @@ export const getOrderById = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { customerName, items } = req.body;
+    const { customerId, items = [] } = req.body;
     
-    if (!customerName || !items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Customer name and at least one item are required' });
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID is required' });
     }
     
     const dataSource = await getDataSource();
     const productRepository = dataSource.getRepository(ProductEntity);
     const orderRepository = dataSource.getRepository(OrderEntity);
     const orderItemRepository = dataSource.getRepository(OrderItemEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
     
     // Start a transaction
     const queryRunner = dataSource.createQueryRunner();
@@ -59,73 +61,86 @@ export const createOrder = async (req: Request, res: Response) => {
     await queryRunner.startTransaction();
     
     try {
+      // Validate customer exists
+      const customer = await customerRepository.findOne({
+        where: { id: Number(customerId) }
+      });
+      
+      if (!customer) {
+        return res.status(404).json({ error: `Customer with ID ${customerId} not found` });
+      }
+
       // Validate products and calculate total amount
       let totalAmount = 0;
       const orderItems: OrderItemEntity[] = [];
       
-      for (const item of items) {
-        const { productId, quantity } = item;
-        
-        if (!productId || !quantity || quantity <= 0) {
-          return res.status(400).json({ error: 'Each item must have a valid productId and quantity' });
+      if (Array.isArray(items) && items.length > 0) {
+        for (const item of items) {
+          const { productId, quantity } = item;
+          
+          if (!productId || !quantity || quantity <= 0) {
+            return res.status(400).json({ error: 'Each item must have a valid productId and quantity' });
+          }
+          
+          // Check if product exists and has enough stock
+          const product = await productRepository.findOne({
+            where: { id: Number(productId) }
+          });
+          
+          if (!product) {
+            return res.status(404).json({ error: `Product with ID ${productId} not found` });
+          }
+          
+          if (product.stock < quantity) {
+            return res.status(400).json({ error: `Not enough stock for product ${product.name}` });
+          }
+          
+          // Create order item
+          const orderItem = new OrderItemEntity();
+          orderItem.productId = Number(productId);
+          orderItem.quantity = Number(quantity);
+          orderItem.unitPrice = product.price;
+          
+          // Update total amount
+          totalAmount += orderItem.quantity * orderItem.unitPrice;
+          
+          // Update product stock
+          product.stock -= quantity;
+          await queryRunner.manager.save(product);
+          
+          orderItems.push(orderItem);
         }
-        
-        // Check if product exists and has enough stock
-        const product = await productRepository.findOne({
-          where: { id: Number(productId) }
-        });
-        
-        if (!product) {
-          return res.status(404).json({ error: `Product with ID ${productId} not found` });
-        }
-        
-        if (product.stock < quantity) {
-          return res.status(400).json({ error: `Not enough stock for product ${product.name}` });
-        }
-        
-        // Create order item
-        const orderItem = new OrderItemEntity();
-        orderItem.productId = Number(productId);
-        orderItem.quantity = Number(quantity);
-        orderItem.unitPrice = product.price;
-        
-        // Update total amount
-        totalAmount += orderItem.quantity * orderItem.unitPrice;
-        
-        // Update product stock
-        product.stock -= quantity;
-        await queryRunner.manager.save(product);
-        
-        orderItems.push(orderItem);
       }
       
       // Create order
       const order = new OrderEntity();
-      order.customerName = customerName;
+      order.customerId = Number(customerId);
       order.status = OrderStatus.PENDING;
       order.totalAmount = totalAmount;
       
       // Save order
       const savedOrder = await queryRunner.manager.save(order);
       
-      // Save order items with order ID
-      for (const item of orderItems) {
-        item.orderId = savedOrder.id;
-        await queryRunner.manager.save(item);
+      // Save order items with order ID if there are any
+      if (orderItems.length > 0) {
+        for (const item of orderItems) {
+          item.orderId = savedOrder.id;
+          await queryRunner.manager.save(item);
+        }
       }
       
       // Commit transaction
       await queryRunner.commitTransaction();
       
-      // Fetch the complete order with items
+      // Return the complete order with items
       const completeOrder = await orderRepository.findOne({
         where: { id: savedOrder.id },
-        relations: ['items', 'items.product']
+        relations: ['items', 'items.product', 'customer']
       });
       
       return res.status(201).json(completeOrder);
     } catch (error) {
-      // Rollback transaction in case of error
+      // Rollback transaction on error
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {

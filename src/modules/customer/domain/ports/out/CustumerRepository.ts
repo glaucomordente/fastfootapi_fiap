@@ -1,4 +1,4 @@
-import { Customer, CustomerDTO } from "../../entities/Custumer";
+import { Customer, CustomerDTO } from "../../entities/Customer";
 
 /**
  * CustomerRepository Interface (Output Port)
@@ -12,21 +12,35 @@ export interface CustomerRepository {
    * Find all customers
    * @returns Promise resolving to an array of CustomerDTO objects
    */
-  findAll(): Promise<CustomerDTO[]>;
+  findAll(): Promise<Customer[]>;
 
   /**
    * Find a customer by its ID
    * @param id The ID of the customer to find
    * @returns Promise resolving to a CustomerDTO or null if not found
    */
-  findById(id: number): Promise<CustomerDTO | null>;
+  findById(id: number): Promise<Customer | null>;
+
+  /**
+   * Find a customer by its email
+   * @param email The email of the customer to find
+   * @returns Promise resolving to a CustomerDTO or null if not found
+   */
+  findByEmail(email: string): Promise<Customer | null>;
+
+  /**
+   * Find a customer by its CPF
+   * @param cpf The CPF of the customer to find
+   * @returns Promise resolving to a CustomerDTO or null if not found
+   */
+  findByCpf(cpf: string): Promise<Customer | null>;
 
   /**
    * Save a new customer
    * @param customer The customer entity to save
    * @returns Promise resolving to the saved CustomerDTO with generated ID
    */
-  save(customer: Customer): Promise<CustomerDTO>;
+  create(customer: CustomerDTO): Promise<Customer>;
 
   /**
    * Update an existing customer

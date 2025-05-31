@@ -24,6 +24,9 @@ export class OrderItemEntity {
   @Column({ name: 'order_id' })
   orderId: number;
 
+  @Column({ name: 'observation', type: 'text', nullable: true })
+  observation: string;
+
   @ManyToOne(() => OrderEntity, order => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
