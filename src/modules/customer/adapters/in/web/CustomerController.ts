@@ -119,4 +119,38 @@ export class CustomerController {
       res.status(500).json({ error: "Failed to fetch customer orders" });
     }
   }
+
+  async getCustomer(req: Request, res: Response): Promise<void> {
+    try {
+      const { cpf, email } = req.query;
+
+      if (!cpf && !email) {
+        res.status(400).json({ error: "Either CPF or email must be provided" });
+        return;
+      }
+
+      const dataSource = await getDataSource();
+      const customerRepository = dataSource.getRepository(CustumerEntity);
+
+      let customer: CustumerEntity | null = null;
+
+      if (cpf) {
+        customer = await customerRepository.findOne({
+          where: { cpf: cpf as string },
+        });
+      } else if (email) {
+        customer = await customerRepository.findOne({
+          where: { email: email as string },
+        });
+      }
+
+      if (customer) {
+        res.json(customer);
+      } else {
+        res.status(404).json({ error: "Customer not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer" });
+    }
+  }
 }

@@ -532,6 +532,33 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *                 $ref: '#/components/schemas/Order'
  *       404:
  *         description: Customer not found
+ * 
+ * /customers/search:
+ *   get:
+ *     tags: [Customers]
+ *     summary: Search customer by email or CPF
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         description: Customer email
+ *       - in: query
+ *         name: cpf
+ *         schema:
+ *           type: string
+ *         description: Customer CPF
+ *     responses:
+ *       200:
+ *         description: Customer found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Customer'
+ *       400:
+ *         description: Email or CPF is required
+ *       404:
+ *         description: Customer not found
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
@@ -564,6 +591,7 @@ function setupRoutes(categoryModule, productModule, customerModule) {
   // Customer routes with validation
   router.get('/customers', customerController.getAllCustomers);
   router.post('/customers', ValidationPipe(CustumerEntity), customerController.createCustomer);
+  router.get('/customers/search', customerController.getCustomer);
   router.get('/customers/:id', customerController.getCustomerById);
   router.put('/customers/:id', ValidationPipe(CustumerEntity), customerController.updateCustomer);
   router.delete('/customers/:id', customerController.deleteCustomer);
