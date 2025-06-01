@@ -79,7 +79,7 @@ import { PaymentController } from "../controllers/PaymentController";
  *     Order:
  *       type: object
  *       required:
- *         - customerId
+ *         - transactionId
  *         - status
  *       properties:
  *         id:
@@ -88,7 +88,10 @@ import { PaymentController } from "../controllers/PaymentController";
  *           description: Order ID
  *         customerId:
  *           type: string
- *           description: Customer ID
+ *           description: Customer ID (optional)
+ *         transactionId:
+ *           type: number
+ *           description: Unique transaction ID
  *         status:
  *           type: string
  *           enum: [PENDING, PREPARING, READY, PAYMENT, COMPLETED, DELIVERED, CANCELLED, READY_FOR_PICKUP]
@@ -687,16 +690,28 @@ import { PaymentController } from "../controllers/PaymentController";
  *           schema:
  *             type: object
  *             required:
- *               - customerId
  *               - items
  *             properties:
  *               customerId:
  *                 type: integer
- *                 description: Customer ID
+ *                 description: Customer ID (optional)
  *               items:
  *                 type: array
  *                 items:
- *                   $ref: '#/components/schemas/OrderItem'
+ *                   type: object
+ *                   required:
+ *                     - productId
+ *                     - quantity
+ *                   properties:
+ *                     productId:
+ *                       type: integer
+ *                       description: ID do produto
+ *                     quantity:
+ *                       type: integer
+ *                       description: Quantidade do produto
+ *                     observation:
+ *                       type: string
+ *                       description: Observações específicas para este item
  *     responses:
  *       201:
  *         description: Order created successfully

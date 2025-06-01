@@ -45,10 +45,6 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { customerId, items = [] } = req.body;
     
-    if (!customerId) {
-      return res.status(400).json({ error: 'Customer ID is required' });
-    }
-    
     const dataSource = await getDataSource();
     const productRepository = dataSource.getRepository(ProductEntity);
     const orderRepository = dataSource.getRepository(OrderEntity);
@@ -61,14 +57,23 @@ export const createOrder = async (req: Request, res: Response) => {
     await queryRunner.startTransaction();
     
     try {
-      // Validate customer exists
-      const customer = await customerRepository.findOne({
-        where: { id: Number(customerId) }
-      });
-      
-      if (!customer) {
-        return res.status(404).json({ error: `Customer with ID ${customerId} not found` });
+      // Validate customer exists if customerId is provided
+      if (customerId) {
+        const customer = await customerRepository.findOne({
+          where: { id: Number(customerId) }
+        });
+        
+        if (!customer) {
+          return res.status(404).json({ error: `Customer with ID ${customerId} not found` });
+        }
       }
+
+      // Generate unique transactionId
+      const lastOrder = await orderRepository.findOne({
+        order: { transactionId: 'DESC' },
+        where: {} // Adicionando condição vazia para evitar erro
+      });
+      const transactionId = lastOrder ? lastOrder.transactionId + 1 : 1;
 
       // Validate products and calculate total amount
       let totalAmount = 0;
@@ -76,7 +81,7 @@ export const createOrder = async (req: Request, res: Response) => {
       
       if (Array.isArray(items) && items.length > 0) {
         for (const item of items) {
-          const { productId, quantity } = item;
+          const { productId, quantity, observation } = item;
           
           if (!productId || !quantity || quantity <= 0) {
             return res.status(400).json({ error: 'Each item must have a valid productId and quantity' });
@@ -100,6 +105,7 @@ export const createOrder = async (req: Request, res: Response) => {
           orderItem.productId = Number(productId);
           orderItem.quantity = Number(quantity);
           orderItem.unitPrice = product.price;
+          orderItem.observation = observation || null;
           
           // Update total amount
           totalAmount += orderItem.quantity * orderItem.unitPrice;
@@ -114,7 +120,10 @@ export const createOrder = async (req: Request, res: Response) => {
       
       // Create order
       const order = new OrderEntity();
-      order.customerId = Number(customerId);
+      if (customerId) {
+        order.customerId = Number(customerId);
+      }
+      order.transactionId = transactionId;
       order.status = OrderStatus.PENDING;
       order.totalAmount = totalAmount;
       
@@ -128,23 +137,20 @@ export const createOrder = async (req: Request, res: Response) => {
           await queryRunner.manager.save(item);
         }
       }
-      
-      // Commit transaction
+
       await queryRunner.commitTransaction();
-      
+
       // Return the complete order with items
       const completeOrder = await orderRepository.findOne({
         where: { id: savedOrder.id },
         relations: ['items', 'items.product', 'customer']
       });
-      
+
       return res.status(201).json(completeOrder);
     } catch (error) {
-      // Rollback transaction on error
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
-      // Release query runner
       await queryRunner.release();
     }
   } catch (error) {

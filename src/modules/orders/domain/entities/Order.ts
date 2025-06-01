@@ -11,8 +11,11 @@ export class Order {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   customerId: string;
+
+  @Column({ unique: true })
+  transactionId: number;
 
   @Column()
   status: string;
@@ -107,7 +110,8 @@ export enum OrderStatus {
 // Data Transfer Object interfaces
 export interface OrderDTO {
   id: number | null;
-  customerId: number;
+  customerId?: number;
+  transactionId: number;
   status: OrderStatus;
   totalAmount: number;
   items: OrderItemDTO[];
@@ -116,12 +120,18 @@ export interface OrderDTO {
 }
 
 export interface OrderItemDTO {
-  id: number | null;
+  id: number;
   productId: number;
   quantity: number;
   unitPrice: number;
-  orderId: number | null;
-  observation: string | null;
+  observation?: string;
+  product?: {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    imageUrl: string;
+  };
 }
 
 // Input DTOs for creating orders
@@ -132,6 +142,7 @@ export interface CreateOrderItemDTO {
 }
 
 export interface CreateOrderDTO {
-  customerId: number;
+  customerId?: number;
+  transactionId: number;
   items: CreateOrderItemDTO[];
 }

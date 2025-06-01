@@ -13,8 +13,11 @@ export class OrderEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'customer_id' })
+  @Column({ name: 'customer_id', nullable: true })
   customerId: number;
+
+  @Column({ name: 'transaction_id', unique: true })
+  transactionId: number;
 
   @ManyToOne(() => CustomerEntity)
   @JoinColumn({ name: 'customer_id' })
