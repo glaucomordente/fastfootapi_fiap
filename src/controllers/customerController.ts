@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { getDataSource } from "../lib/typeorm";
-import { CustumerEntity } from "../modules/customer/adapters/out/persistence/entities/Customer.entity";
+import { CustomerEntity } from "../modules/customer/adapters/out/persistence/entities/Customer.entity";
 import { OrderEntity } from "../modules/orders/adapters/out/persistence/entities/Order.entity";
 import { QueryFailedError } from "typeorm";
 import { validate } from "class-validator";
@@ -11,7 +11,7 @@ import { validate } from "class-validator";
 export const getAllCustomers = async (req: Request, res: Response) => {
   try {
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
     const customers = await customerRepository.find();
     return res.status(200).json(customers);
   } catch (error) {
@@ -27,7 +27,7 @@ export const getCustomerById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
     const customer = await customerRepository.findOne({
       where: { id: Number(id) },
     });
@@ -57,7 +57,7 @@ export const createCustomer = async (req: Request, res: Response) => {
     }
 
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
 
     // Create customer instance
     const newCustomer = customerRepository.create({
@@ -122,7 +122,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
     const { name, email, cpf, phone } = req.body;
 
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
 
     const existingCustomer = await customerRepository.findOne({
       where: { id: Number(id) },
@@ -194,7 +194,7 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
 
     const existingCustomer = await customerRepository.findOne({
       where: { id: Number(id) },
@@ -219,7 +219,7 @@ export const getCustomerOrders = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
     const orderRepository = dataSource.getRepository(OrderEntity);
 
     // First get the customer to get their name
@@ -232,9 +232,8 @@ export const getCustomerOrders = async (req: Request, res: Response) => {
     }
 
     const orders = await orderRepository.find({
-      where: { customerName: customer.name },
+      where: { customerId: customer.id },
       relations: ["items", "items.product"],
-      order: { createdAt: "DESC" },
     });
 
     return res.status(200).json(orders);
@@ -251,7 +250,7 @@ export const getCustomer = async (req: Request, res: Response) => {
   try {
     const { email, cpf } = req.query;
     const dataSource = await getDataSource();
-    const customerRepository = dataSource.getRepository(CustumerEntity);
+    const customerRepository = dataSource.getRepository(CustomerEntity);
 
     if (!email && !cpf) {
       return res.status(400).json({ error: "Email or CPF is required" });

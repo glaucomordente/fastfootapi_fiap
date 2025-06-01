@@ -1,4 +1,4 @@
-import { Customer, CustomerDTO } from "../../entities/Custumer";
+import { Customer, CustomerDTO } from "../../entities/Customer";
 
 /**
  * CustomerUseCase Interface (Input Port)
@@ -26,7 +26,7 @@ export interface CustomerUseCase {
    * @param customerData The data for the new customer
    * @returns Promise resolving to the created CustomerDTO
    */
-  createCustomer(customerData: Omit<CustomerDTO, "id">): Promise<CustomerDTO>;
+  createCustomer(customer: CustomerDTO): Promise<Customer>;
 
   /**
    * Update an existing customer
@@ -34,15 +34,12 @@ export interface CustomerUseCase {
    * @param customerData The updated customer data
    * @returns Promise resolving to the updated CustomerDTO or null if not found
    */
-  updateCustomer(
-    id: number,
-    customerData: Partial<Omit<CustomerDTO, "id">>
-  ): Promise<CustomerDTO | null>;
+  updateCustomer(id: number, customer: CustomerDTO): Promise<Customer | null>;
 
   /**
    * Delete a customer
    * @param id The ID of the customer to delete
    * @returns Promise resolving to true if deleted, false if not found
    */
-  deleteCustomer(id: number): Promise<boolean>;
+  deleteCustomer(id: number): Promise<void>;
 }

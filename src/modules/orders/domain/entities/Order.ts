@@ -4,137 +4,24 @@
  * This is a domain entity that represents an order in our system.
  * It contains the core business logic and validation rules for orders.
  */
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+
+@Entity("orders")
 export class Order {
-  private _id: number | null;
-  private _customerName: string;
-  private _status: OrderStatus;
-  private _totalAmount: number;
-  private _items: OrderItem[];
-  private _createdAt: Date;
-  private _updatedAt: Date;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-  constructor(
-    id: number | null,
-    customerName: string,
-    status: OrderStatus,
-    totalAmount: number,
-    items: OrderItem[],
-    createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
-  ) {
-    // Validate inputs
-    if (customerName.trim().length === 0) {
-      throw new Error('Customer name cannot be empty');
-    }
+  @Column()
+  customerId: string;
 
-    if (items.length === 0) {
-      throw new Error('Order must have at least one item');
-    }
+  @Column()
+  status: string;
 
-    if (totalAmount <= 0) {
-      throw new Error('Total amount must be greater than zero');
-    }
+  @CreateDateColumn()
+  createdAt: Date;
 
-    this._id = id;
-    this._customerName = customerName;
-    this._status = status;
-    this._totalAmount = totalAmount;
-    this._items = items;
-    this._createdAt = createdAt;
-    this._updatedAt = updatedAt;
-  }
-
-  // Getters
-  get id(): number | null {
-    return this._id;
-  }
-
-  get customerName(): string {
-    return this._customerName;
-  }
-
-  get status(): OrderStatus {
-    return this._status;
-  }
-
-  get totalAmount(): number {
-    return this._totalAmount;
-  }
-
-  get items(): OrderItem[] {
-    return [...this._items]; // Return a copy to prevent direct modification
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  // Business methods
-  updateStatus(status: OrderStatus): void {
-    // Validate status transitions
-    if (this._status === OrderStatus.CANCELLED) {
-      throw new Error('Cannot update status of a cancelled order');
-    }
-
-    if (this._status === OrderStatus.COMPLETED && status !== OrderStatus.CANCELLED) {
-      throw new Error('Completed order can only be cancelled');
-    }
-
-    this._status = status;
-    this._updatedAt = new Date();
-  }
-
-  updateCustomerName(customerName: string): void {
-    if (customerName.trim().length === 0) {
-      throw new Error('Customer name cannot be empty');
-    }
-    this._customerName = customerName;
-    this._updatedAt = new Date();
-  }
-
-  // Convert to data transfer object
-  toDTO(): OrderDTO {
-    return {
-      id: this._id,
-      customerName: this._customerName,
-      status: this._status,
-      totalAmount: this._totalAmount,
-      items: this._items.map(item => ({
-        id: item.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        orderId: item.orderId
-      })),
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt
-    };
-  }
-
-  // Create from data transfer object
-  static fromDTO(dto: OrderDTO): Order {
-    const items = dto.items.map(itemDto => new OrderItem(
-      itemDto.id,
-      itemDto.productId,
-      itemDto.quantity,
-      itemDto.unitPrice,
-      itemDto.orderId
-    ));
-
-    return new Order(
-      dto.id,
-      dto.customerName,
-      dto.status,
-      dto.totalAmount,
-      items,
-      dto.createdAt,
-      dto.updatedAt
-    );
-  }
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 /**
@@ -148,13 +35,15 @@ export class OrderItem {
   private _quantity: number;
   private _unitPrice: number;
   private _orderId: number | null;
+  private _observation: string | null;
 
   constructor(
     id: number | null,
     productId: number,
     quantity: number,
     unitPrice: number,
-    orderId: number | null
+    orderId: number | null,
+    observation: string | null = null
   ) {
     // Validate inputs
     if (quantity <= 0) {
@@ -170,6 +59,7 @@ export class OrderItem {
     this._quantity = quantity;
     this._unitPrice = unitPrice;
     this._orderId = orderId;
+    this._observation = observation;
   }
 
   // Getters
@@ -193,6 +83,10 @@ export class OrderItem {
     return this._orderId;
   }
 
+  get observation(): string | null {
+    return this._observation;
+  }
+
   // Calculate total price for this item
   get totalPrice(): number {
     return this._quantity * this._unitPrice;
@@ -204,14 +98,16 @@ export enum OrderStatus {
   PENDING = 'PENDING',
   PREPARING = 'PREPARING',
   READY = 'READY',
+  PAYMENT = 'PAYMENT',
   COMPLETED = 'COMPLETED',
+  DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED'
 }
 
 // Data Transfer Object interfaces
 export interface OrderDTO {
   id: number | null;
-  customerName: string;
+  customerId: number;
   status: OrderStatus;
   totalAmount: number;
   items: OrderItemDTO[];
@@ -225,15 +121,17 @@ export interface OrderItemDTO {
   quantity: number;
   unitPrice: number;
   orderId: number | null;
+  observation: string | null;
 }
 
 // Input DTOs for creating orders
 export interface CreateOrderItemDTO {
   productId: number;
   quantity: number;
+  observation?: string;
 }
 
 export interface CreateOrderDTO {
-  customerName: string;
+  customerId: number;
   items: CreateOrderItemDTO[];
 }

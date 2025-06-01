@@ -86,7 +86,6 @@ async function bootstrap() {
 
     await categoryModule.initialize();
     await productModule.initialize();
-    await customerModule.initialize();
     winston.info("Modules initialized");
 
     // Setup routes
