@@ -6,19 +6,29 @@ import { CustomerValidations } from "../validations/CustomerValidations";
  * This is a domain entity that represents a customer in our system.
  * It contains the core business logic and validation rules for customers.
  */
+export interface CustomerDTO {
+  id?: number;
+  name: string;
+  email: string;
+  cpf: string;
+  phone?: string | null;
+}
+
 export class Customer {
   private _id: number | null;
   private _name: string;
   private _email: string;
   private _cpf: string;
-  private _phone?: string | null;
+  private _phone: string | null;
+  private _createdAt: Date;
+  private _updatedAt: Date;
 
   constructor(
     id: number | null,
     name: string,
     email: string,
     cpf: string,
-    phone?: string | null
+    phone: string | null = null
   ) {
     // Validate inputs using domain validations
     if (!CustomerValidations.validateName(name)) {
@@ -38,7 +48,9 @@ export class Customer {
     this._name = name;
     this._email = email;
     this._cpf = cpf;
-    this._phone = phone ?? null;
+    this._phone = phone;
+    this._createdAt = new Date();
+    this._updatedAt = new Date();
   }
 
   // Getters
@@ -58,8 +70,16 @@ export class Customer {
     return this._cpf;
   }
 
-  get phone(): string | null | undefined {
+  get phone(): string | null {
     return this._phone;
+  }
+
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt;
   }
 
   // Business methods
@@ -68,6 +88,7 @@ export class Customer {
       throw new Error("Customer name cannot be empty");
     }
     this._name = name;
+    this._updatedAt = new Date();
   }
 
   updateEmail(email: string): void {
@@ -75,6 +96,7 @@ export class Customer {
       throw new Error("Invalid email format");
     }
     this._email = email;
+    this._updatedAt = new Date();
   }
 
   updateCpf(cpf: string): void {
@@ -82,13 +104,15 @@ export class Customer {
       throw new Error("Invalid CPF format");
     }
     this._cpf = cpf;
+    this._updatedAt = new Date();
   }
 
   updatePhone(phone?: string | null): void {
     if (phone && !CustomerValidations.validatePhone(phone)) {
       throw new Error("Invalid phone format");
     }
-    this._phone = phone ?? null;
+    this._phone = phone;
+    this._updatedAt = new Date();
   }
 
   // Convert to data transfer object
@@ -104,15 +128,6 @@ export class Customer {
 
   // Create from data transfer object
   static fromDTO(dto: CustomerDTO): Customer {
-    return new Customer(dto.id, dto.name, dto.email, dto.cpf, dto.phone);
+    return new Customer(dto.id || null, dto.name, dto.email, dto.cpf, dto.phone);
   }
-}
-
-// Data Transfer Object interface
-export interface CustomerDTO {
-  id: number | null;
-  name: string;
-  email: string;
-  cpf: string;
-  phone?: string | null;
 }

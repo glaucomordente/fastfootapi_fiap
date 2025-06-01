@@ -1,106 +1,65 @@
-import { Repository } from "typeorm";
-import { Customer, CustomerDTO } from "../../../domain/entities/Custumer";
-import { CustomerRepository } from "../../../domain/ports/out/CustumerRepository";
-import { CustumerEntity } from "./entities/Customer.entity";
-import { getDataSource } from "../../../../../lib/typeorm";
+import { Repository, DataSource } from 'typeorm';
+import { Customer, CustomerDTO } from '../../../domain/entities/Customer';
+import { CustomerRepository } from '../../../domain/ports/out/CustomerRepository';
+import { CustomerEntity } from './entities/Customer.entity';
 
 /**
- * TypeORMCustumerRepository
- *
- * This class implements the CustomerRepository interface using TypeORM.
- * It serves as an output adapter for database operations.
+ * TypeORMCustomerRepository
+ * 
+ * This is the TypeORM implementation of the CustomerRepository interface.
+ * It uses TypeORM to interact with the database.
  */
 export class TypeORMCustomerRepository implements CustomerRepository {
-  private repository: Repository<CustumerEntity>;
+  private repository: Repository<CustomerEntity>;
 
-  constructor() {
-    // Repository will be set in the initialize method
-    this.repository = null;
+  constructor(dataSource: DataSource) {
+    this.repository = dataSource.getRepository(CustomerEntity);
   }
 
-  /**
-   * Initialize the repository
-   * This method should be called before using any other methods
-   */
-  async initialize(): Promise<void> {
-    const dataSource = await getDataSource();
-    this.repository = dataSource.getRepository(CustumerEntity);
+  async findAll(): Promise<Customer[]> {
+    const customers = await this.repository.find();
+    return customers.map((customer) => Customer.fromDTO(customer));
   }
 
-  async findAll(): Promise<CustomerDTO[]> {
-    const customers = await this.repository!.find();
-    return customers.map((custumer) => ({
-      id: custumer.id,
-      name: custumer.name,
-      email: custumer.email,
-      cpf: custumer.cpf,
-      phone: custumer.phone,
-    }));
-  }
-
-  async findById(id: number): Promise<CustomerDTO | null> {
-    const custumer = await this.repository!.findOne({ where: { id } });
-    if (!custumer) {
+  async findById(id: number): Promise<Customer | null> {
+    const customer = await this.repository.findOne({ where: { id } });
+    if (!customer) {
       return null;
     }
-    return {
-      id: custumer.id,
-      name: custumer.name,
-      email: custumer.email,
-      cpf: custumer.cpf,
-      phone: custumer.phone,
-    };
+    return Customer.fromDTO(customer);
   }
 
-  async save(customer: Customer): Promise<CustomerDTO> {
-    const custumerEntity = new CustumerEntity();
-    custumerEntity.name = customer.name;
-    custumerEntity.email = customer.email;
-    custumerEntity.cpf = customer.cpf;
-    custumerEntity.phone = customer.phone ?? null;
+  async create(customer: CustomerDTO): Promise<Customer> {
+    const customerEntity = new CustomerEntity();
+    customerEntity.name = customer.name;
+    customerEntity.email = customer.email;
+    customerEntity.cpf = customer.cpf;
+    customerEntity.phone = customer.phone ?? null;
 
-    const savedCustumer = await this.repository!.save(custumerEntity);
-
-    return {
-      id: savedCustumer.id,
-      name: savedCustumer.name,
-      email: savedCustumer.email,
-      cpf: savedCustumer.cpf,
-      phone: savedCustumer.phone,
-    };
+    const savedCustomer = await this.repository.save(customerEntity);
+    return Customer.fromDTO(savedCustomer);
   }
 
-  async update(customer: Customer): Promise<CustomerDTO | null> {
-    if (customer.id === null) {
-      throw new Error("Cannot update customer without ID");
-    }
-
-    const existingCustumer = await this.repository!.findOne({
-      where: { id: customer.id },
+  async update(id: number, customer: CustomerDTO): Promise<Customer | null> {
+    const existingCustomer = await this.repository.findOne({
+      where: { id },
     });
 
-    if (!existingCustumer) {
+    if (!existingCustomer) {
       return null;
     }
 
-    existingCustumer.name = customer.name;
-    existingCustumer.email = customer.email;
-    existingCustumer.cpf = customer.cpf;
-    existingCustumer.phone = customer.phone ?? null;
+    existingCustomer.name = customer.name;
+    existingCustomer.email = customer.email;
+    existingCustomer.cpf = customer.cpf;
+    existingCustomer.phone = customer.phone ?? null;
 
-    const updatedCustumer = await this.repository!.save(existingCustumer);
-
-    return {
-      id: updatedCustumer.id,
-      name: updatedCustumer.name,
-      email: updatedCustumer.email,
-      cpf: updatedCustumer.cpf,
-      phone: updatedCustumer.phone,
-    };
+    const updatedCustomer = await this.repository.save(existingCustomer);
+    return Customer.fromDTO(updatedCustomer);
   }
 
   async delete(id: number): Promise<boolean> {
-    const result = await this.repository!.delete(id);
+    const result = await this.repository.delete(id);
     return result.affected !== undefined && result.affected > 0;
   }
 }

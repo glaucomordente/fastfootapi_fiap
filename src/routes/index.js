@@ -4,8 +4,8 @@ const categoryController = require('../controllers/categoryController');
 const productController = require('../controllers/productController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
-const { ValidationPipe } = require('../lib/validation.pipe');
-const { CustumerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
+// const { ValidationPipe } = require('../lib/validation.pipe');
+const { CustomerEntity } = require('../modules/customer/adapters/out/persistence/entities/Customer.entity');
 
 /**
  * @swagger
@@ -83,7 +83,7 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *           description: The name of the customer
  *         status:
  *           type: string
- *           enum: [PENDING, PREPARING, READY, COMPLETED, CANCELLED]
+ *           enum: [PENDING, PREPARING, READY, PAYMENT, COMPLETED, DELIVERED, CANCELLED]
  *           description: The status of the order
  *         totalAmount:
  *           type: number
@@ -113,6 +113,9 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *           type: number
  *           format: float
  *           description: The unit price of the product
+ *         observation:
+ *           type: string
+ *           description: Observações específicas para este item do pedido
  *     
  *     Customer:
  *       type: object
@@ -139,7 +142,7 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *     
  *     OrderStatus:
  *       type: string
- *       enum: [PENDING, PREPARING, READY, COMPLETED, CANCELLED]
+ *       enum: [PENDING, PREPARING, READY, PAYMENT, COMPLETED, DELIVERED, CANCELLED]
  */
 
 /**
@@ -358,16 +361,87 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *                 $ref: '#/components/schemas/Order'
  *   post:
  *     tags: [Orders]
- *     summary: Create a new order
+ *     summary: Iniciar um novo pedido
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Order'
+ *             type: object
+ *             required:
+ *               - customerId
+ *             properties:
+ *               customerId:
+ *                 type: integer
+ *                 description: ID do cliente que fez o pedido
+ *               items:
+ *                 type: array
+ *                 description: Lista de itens do pedido (opcional)
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - productId
+ *                     - quantity
+ *                   properties:
+ *                     productId:
+ *                       type: integer
+ *                       description: ID do produto
+ *                     quantity:
+ *                       type: integer
+ *                       description: Quantidade do produto
+ *                     observation:
+ *                       type: string
+ *                       description: Observações específicas para este item do pedido
  *     responses:
  *       201:
- *         description: Order created
+ *         description: Pedido iniciado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: ID do pedido criado
+ *                 customerId:
+ *                   type: integer
+ *                   description: ID do cliente
+ *                 status:
+ *                   type: string
+ *                   enum: [PENDING, PREPARING, READY, PAYMENT, COMPLETED, DELIVERED, CANCELLED]
+ *                   description: Status do pedido
+ *                 totalAmount:
+ *                   type: number
+ *                   format: float
+ *                   description: Valor total do pedido (0.00 se não houver itens)
+ *                 items:
+ *                   type: array
+ *                   description: Lista de itens do pedido (vazia se não houver itens)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID do item do pedido
+ *                       productId:
+ *                         type: integer
+ *                         description: ID do produto
+ *                       quantity:
+ *                         type: integer
+ *                         description: Quantidade do produto
+ *                       unitPrice:
+ *                         type: number
+ *                         format: float
+ *                         description: Preço unitário do produto
+ *                       observation:
+ *                         type: string
+ *                         description: Observações específicas para este item do pedido
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Cliente não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  * 
  * /orders/{id}:
  *   get:
@@ -430,6 +504,173 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *         description: Order cancelled
  *       404:
  *         description: Order not found
+ * 
+ * /orders/{id}/finalize:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Finalize order
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order finalized
+ *       404:
+ *         description: Order not found
+ * 
+ * /orders/ready:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Listar pedidos prontos
+ *     description: Retorna todos os pedidos com status READY
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos prontos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ * 
+ * /orders/{id}/prepare:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Iniciar preparo do pedido
+ *     description: Altera o status do pedido para PREPARING
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     responses:
+ *       200:
+ *         description: Pedido iniciado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Erro de validação
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ * 
+ * /orders/{id}/items:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Adicionar item a um pedido
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *             properties:
+ *               productId:
+ *                 type: integer
+ *                 description: ID do produto a ser adicionado
+ *               observation:
+ *                 type: string
+ *                 description: Observações específicas para este item do pedido
+ *     responses:
+ *       201:
+ *         description: Item adicionado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Dados inválidos ou pedido cancelado/completo
+ *       404:
+ *         description: Pedido ou produto não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ *   delete:
+ *     tags: [Orders]
+ *     summary: Remover item de um pedido
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - itemId
+ *             properties:
+ *               itemId:
+ *                 type: integer
+ *                 description: ID do item a ser removido do pedido
+ *     responses:
+ *       200:
+ *         description: Item removido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Dados inválidos ou pedido cancelado/completo
+ *       404:
+ *         description: Pedido ou item não encontrado
+ *       500:
+ *         description: Erro interno do servidor
  * 
  * /customers:
  *   get:
@@ -559,6 +800,108 @@ const { CustumerEntity } = require('../modules/customer/adapters/out/persistence
  *         description: Email or CPF is required
  *       404:
  *         description: Customer not found
+ * 
+ * @swagger
+ * /orders/{id}/complete:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Finalizar pedido
+ *     description: Altera o status do pedido para COMPLETED
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     responses:
+ *       200:
+ *         description: Pedido finalizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Erro de validação
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ * 
+ * @swagger
+ * /orders/{id}/confirm-pickup:
+ *   put:
+ *     tags: [Orders]
+ *     summary: Confirmar entrega do pedido
+ *     description: Altera o status do pedido para DELIVERED quando o pedido está finalizado
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     responses:
+ *       200:
+ *         description: Pedido entregue com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Erro de validação
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Mensagem de erro
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
@@ -583,17 +926,24 @@ function setupRoutes(categoryModule, productModule, customerModule) {
 
   // Orders routes
   router.get('/orders', orderController.getAllOrders);
+  router.get('/orders/ready', orderController.getReadyOrders);
   router.post('/orders', orderController.createOrder);
   router.get('/orders/:id', orderController.getOrderById);
   router.put('/orders/:id/status', orderController.updateOrderStatus);
   router.put('/orders/:id/cancel', orderController.cancelOrder);
+  router.put('/orders/:id/finalize', orderController.finalizeOrder);
+  router.put('/orders/:id/prepare', orderController.startPreparingOrder);
+  router.put('/orders/:id/complete', orderController.completeOrder);
+  router.put('/orders/:id/confirm-pickup', orderController.confirmOrderPickup);
+  router.post('/orders/:id/items', orderController.addOrderItem);
+  router.delete('/orders/:id/items', orderController.removeOrderItem);
 
   // Customer routes with validation
   router.get('/customers', customerController.getAllCustomers);
-  router.post('/customers', ValidationPipe(CustumerEntity), customerController.createCustomer);
+  router.post('/customers', customerController.createCustomer);
   router.get('/customers/search', customerController.getCustomer);
   router.get('/customers/:id', customerController.getCustomerById);
-  router.put('/customers/:id', ValidationPipe(CustumerEntity), customerController.updateCustomer);
+  router.put('/customers/:id', customerController.updateCustomer);
   router.delete('/customers/:id', customerController.deleteCustomer);
   router.get('/customers/:id/orders', customerController.getCustomerOrders);
 

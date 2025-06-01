@@ -18,7 +18,7 @@ export const AppDataSource = new DataSource({
   entities: [
     'src/modules/**/adapters/out/persistence/entities/*.entity.ts'
   ],
-  migrations: ['src/migrations/*.ts'],
+  migrations: ['src/database/migrations/*.ts'],
   connectTimeoutMS: 10000
 });
 

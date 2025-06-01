@@ -1,40 +1,40 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { IsEmail, IsNotEmpty, Length, Matches } from "class-validator";
-import { ProductEntity } from "../../../../../products/adapters/out/persistence/entities/Product.entity";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { IsEmail, IsNotEmpty, Length } from 'class-validator';
 
 /**
- * Custumer Entity for TypeORM
- *
- * This is the TypeORM entity that maps to the 'custumers' table in the database.
- * Includes validations for email, CPF and phone fields.
+ * Customer Entity for TypeORM
+ * 
+ * This is the TypeORM entity that maps to the 'customers' table in the database.
  */
-@Entity("custumers")
-export class CustumerEntity {
+@Entity("customers")
+export class CustomerEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100, nullable: false })
-  @IsNotEmpty({ message: "Name is required" })
-  @Length(2, 100, { message: "Name must be between 2 and 100 characters" })
+  @Column()
+  @IsNotEmpty({ message: 'O nome é obrigatório' })
+  @Length(3, 100, { message: 'O nome deve ter entre 3 e 100 caracteres' })
   name: string;
 
-  @Column({ length: 100, nullable: false, unique: true })
-  @IsNotEmpty({ message: "Email is required" })
-  @IsEmail({}, { message: "Invalid email format" })
-  @Length(5, 100, { message: "Email must be between 5 and 100 characters" })
+  @Column({ unique: true })
+  @IsEmail({}, { message: 'Email inválido' })
+  @IsNotEmpty({ message: 'O email é obrigatório' })
   email: string;
 
-  @Column({ length: 14, nullable: false, unique: true })
-  @IsNotEmpty({ message: "CPF is required" })
-  @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, {
-    message: "CPF must be in format: XXX.XXX.XXX-XX",
-  })
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'O CPF é obrigatório' })
+  @Length(11, 11, { message: 'O CPF deve ter 11 dígitos' })
   cpf: string;
 
-  @Column({ length: 20, nullable: true })
-  @Matches(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, {
-    message: "Phone must be in format: (XX) XXXXX-XXXX or (XX) XXXX-XXXX",
-    each: false,
-  })
-  phone: string | null;
+  @Column({ nullable: true })
+  phone: string;
+
+  @OneToMany('OrderEntity', 'customer')
+  orders: any[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }
