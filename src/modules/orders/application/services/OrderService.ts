@@ -63,13 +63,9 @@ export class OrderService implements OrderUseCase {
     }
     
     // Create order entity with validation
-    const order = new Order(
-      null,
-      orderData.customerId,
-      OrderStatus.PENDING,
-      totalAmount,
-      orderItems
-    );
+    const order = new Order();
+    order.customerId = orderData.customerId.toString();
+    order.status = OrderStatus.PENDING;
     
     // Save to repository
     return this.orderRepository.save(order);
@@ -83,12 +79,12 @@ export class OrderService implements OrderUseCase {
     }
     
     // Create order entity from existing data
-    const order = Order.fromDTO(existingOrderDTO);
+    const order = new Order();
+    order.id = existingOrderDTO.id?.toString() || '';
+    order.customerId = existingOrderDTO.customerId.toString();
+    order.status = status;
     
     try {
-      // Update status with business rules validation
-      order.updateStatus(status);
-      
       // Update in repository
       return this.orderRepository.update(order);
     } catch (error) {

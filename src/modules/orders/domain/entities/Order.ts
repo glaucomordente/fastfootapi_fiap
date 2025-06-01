@@ -4,127 +4,24 @@
  * This is a domain entity that represents an order in our system.
  * It contains the core business logic and validation rules for orders.
  */
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+
+@Entity("orders")
 export class Order {
-  private _id: number | null;
-  private _customerId: number;
-  private _status: OrderStatus;
-  private _totalAmount: number;
-  private _items: OrderItem[];
-  private _createdAt: Date;
-  private _updatedAt: Date;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-  constructor(
-    id: number | null,
-    customerId: number,
-    status: OrderStatus,
-    totalAmount: number,
-    items: OrderItem[],
-    createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
-  ) {
-    // Validate inputs
-    if (customerId <= 0) {
-      throw new Error('Customer ID must be greater than zero');
-    }
+  @Column()
+  customerId: string;
 
-    if (totalAmount < 0) {
-      throw new Error('Total amount must be greater than or equal to zero');
-    }
+  @Column()
+  status: string;
 
-    this._id = id;
-    this._customerId = customerId;
-    this._status = status;
-    this._totalAmount = totalAmount;
-    this._items = items;
-    this._createdAt = createdAt;
-    this._updatedAt = updatedAt;
-  }
+  @CreateDateColumn()
+  createdAt: Date;
 
-  // Getters
-  get id(): number | null {
-    return this._id;
-  }
-
-  get customerId(): number {
-    return this._customerId;
-  }
-
-  get status(): OrderStatus {
-    return this._status;
-  }
-
-  get totalAmount(): number {
-    return this._totalAmount;
-  }
-
-  get items(): OrderItem[] {
-    return this._items;
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  // Business methods
-  updateStatus(status: OrderStatus): void {
-    // Validate status transitions
-    if (this._status === OrderStatus.CANCELLED) {
-      throw new Error('Cannot update status of a cancelled order');
-    }
-
-    if (this._status === OrderStatus.COMPLETED && status !== OrderStatus.CANCELLED) {
-      throw new Error('Completed order can only be cancelled');
-    }
-
-    this._status = status;
-    this._updatedAt = new Date();
-  }
-
-  // Convert to data transfer object
-  toDTO(): OrderDTO {
-    return {
-      id: this._id,
-      customerId: this._customerId,
-      status: this._status,
-      totalAmount: this._totalAmount,
-      items: this._items.map(item => ({
-        id: item.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        orderId: item.orderId,
-        observation: item.observation
-      })),
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt
-    };
-  }
-
-  // Create from data transfer object
-  static fromDTO(dto: OrderDTO): Order {
-    const items = dto.items.map(itemDto => new OrderItem(
-      itemDto.id,
-      itemDto.productId,
-      itemDto.quantity,
-      itemDto.unitPrice,
-      itemDto.orderId,
-      itemDto.observation
-    ));
-
-    return new Order(
-      dto.id,
-      dto.customerId,
-      dto.status,
-      dto.totalAmount,
-      items,
-      dto.createdAt,
-      dto.updatedAt
-    );
-  }
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 /**
