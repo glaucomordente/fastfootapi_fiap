@@ -9,6 +9,7 @@ import { getDataSource } from "../lib/typeorm";
 import { OrderNotificationController } from "../modules/orders/adapters/in/web/OrderNotificationController";
 import { OrderNotificationService } from "../modules/orders/application/services/OrderNotificationService";
 import { TypeORMOrderRepository } from "../modules/orders/adapters/out/persistence/TypeORMOrderRepository";
+import { PaymentController } from "../controllers/PaymentController";
 // import { validationMiddleware } from "../lib/validation.pipe";
 
 /**
@@ -22,6 +23,8 @@ import { TypeORMOrderRepository } from "../modules/orders/adapters/out/persisten
  *     description: Order management
  *   - name: Customers
  *     description: Customer management
+ *   - name: Payments
+ *     description: Payment management
  */
 
 /**
@@ -144,6 +147,48 @@ import { TypeORMOrderRepository } from "../modules/orders/adapters/out/persisten
  *         phone:
  *           type: string
  *           description: The phone number of the customer
+ *     
+ *     Payment:
+ *       type: object
+ *       required:
+ *         - orderId
+ *         - amount
+ *         - status
+ *         - paymentMethod
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID do pagamento
+ *         orderId:
+ *           type: integer
+ *           description: ID do pedido
+ *         amount:
+ *           type: number
+ *           format: float
+ *           description: Valor pago
+ *         status:
+ *           type: string
+ *           enum: [APPROVED, REJECTED]
+ *           description: Status do pagamento
+ *         paymentMethod:
+ *           type: string
+ *           enum: [PIX, CREDIT_CARD, DEBIT_CARD]
+ *           description: Método de pagamento utilizado
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Data de criação do pagamento
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Data da última atualização do pagamento
+ *     
+ *     Error:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Mensagem de erro
  */
 
 /**
@@ -1028,6 +1073,71 @@ import { TypeORMOrderRepository } from "../modules/orders/adapters/out/persisten
  */
 
 /**
+ * @swagger
+ * /payments/confirm:
+ *   post:
+ *     tags:
+ *       - Payments
+ *     summary: Confirma o pagamento de um pedido
+ *     description: |
+ *       Confirma o pagamento de um pedido e atualiza seu status para READY.
+ *       O pedido deve estar no status PAYMENT para que a confirmação seja aceita.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - orderId
+ *               - amount
+ *             properties:
+ *               orderId:
+ *                 type: integer
+ *                 description: ID do pedido
+ *               amount:
+ *                 type: number
+ *                 format: float
+ *                 description: Valor pago
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [PIX, CREDIT_CARD, DEBIT_CARD]
+ *                 default: PIX
+ *                 description: Método de pagamento utilizado
+ *     responses:
+ *       200:
+ *         description: Pagamento confirmado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Pagamento confirmado com sucesso
+ *                 payment:
+ *                   $ref: '#/components/schemas/Payment'
+ *       400:
+ *         description: Pedido não está no status PAYMENT
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Pedido não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Erro ao processar a confirmação do pagamento
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+/**
  * Setup routes with initialized modules
  * @param categoryModule Initialized CategoryModule
  * @param productModule Initialized ProductModule
@@ -1048,6 +1158,7 @@ export default async function setupRoutes(
   const customerRepository = new TypeORMCustomerRepository(dataSource);
   const customerService = new CustomerService(customerRepository);
   const customerController = new CustomerController(customerService);
+  const paymentController = new PaymentController();
 
   // Health check route
   router.get("/health", (req: Request, res: Response) => {
@@ -1091,6 +1202,9 @@ export default async function setupRoutes(
   const orderNotificationController = new OrderNotificationController(orderNotificationService);
 
   router.post("/orders/:orderId/notify-ready", orderNotificationController.notifyOrderReady.bind(orderNotificationController));
+
+  // Payment routes
+  router.post("/payments/confirm", paymentController.confirmPayment.bind(paymentController));
 
   return router;
 }

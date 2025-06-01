@@ -9,8 +9,8 @@
     "dev": "nodemon --exec ts-node --transpile-only src/index.ts",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm migration:generate -- -d src/lib/typeorm.ts",
-    "migration:run": "npm run typeorm migration:run -- -d src/lib/typeorm.ts",
-    "migration:revert": "npm run typeorm migration:revert -- -d src/lib/typeorm.ts"
+    "migration:run": "npm run typeorm migration:run -- -d src/configs/typeorm.config.ts",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/configs/typeorm.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.2",
