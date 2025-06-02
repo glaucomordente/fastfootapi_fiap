@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - fastfootnet
+      - fastfoodnet
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
@@ -19,7 +19,7 @@ services:
 
   app:
     build: .
-    container_name: fastfootapi
+    container_name: fastfoodapi
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,12 +32,12 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - fastfootnet
+      - fastfoodnet
     command: ["npm", "start"]
 
 volumes:
   db-data:
 
 networks:
-  fastfootnet:
+  fastfoodnet:
     driver: bridge

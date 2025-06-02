@@ -161,37 +161,37 @@ import { PaymentController } from "../controllers/PaymentController";
  *       properties:
  *         id:
  *           type: integer
- *           description: ID do pagamento
+ *           description: The auto-generated ID of the payment
  *         orderId:
  *           type: integer
- *           description: ID do pedido
+ *           description: The order ID
  *         amount:
  *           type: number
  *           format: float
- *           description: Valor pago
+ *           description: The paid amount
  *         status:
  *           type: string
  *           enum: [APPROVED, REJECTED]
- *           description: Status do pagamento
+ *           description: The payment status
  *         paymentMethod:
  *           type: string
  *           enum: [PIX, CREDIT_CARD, DEBIT_CARD]
- *           description: Método de pagamento utilizado
+ *           description: The payment method used
  *         createdAt:
  *           type: string
  *           format: date-time
- *           description: Data de criação do pagamento
+ *           description: The payment creation date
  *         updatedAt:
  *           type: string
  *           format: date-time
- *           description: Data da última atualização do pagamento
+ *           description: The last update date of the payment
  *     
  *     Error:
  *       type: object
  *       properties:
  *         message:
  *           type: string
- *           description: Mensagem de erro
+ *           description: Error message
  */
 
 /**
@@ -1089,14 +1089,14 @@ import { PaymentController } from "../controllers/PaymentController";
 
 /**
  * @swagger
- * /payments/confirm:
+ *  /payments/confirm:
  *   post:
  *     tags:
  *       - Payments
- *     summary: Confirma o pagamento de um pedido
+ *     summary: Confirm order payment
  *     description: |
- *       Confirma o pagamento de um pedido e atualiza seu status para READY.
- *       O pedido deve estar no status PAYMENT para que a confirmação seja aceita.
+ *       Confirms the payment of an order and updates its status to READY.
+ *       The order must be in PAYMENT status for the confirmation to be accepted.
  *     requestBody:
  *       required: true
  *       content:
@@ -1109,19 +1109,19 @@ import { PaymentController } from "../controllers/PaymentController";
  *             properties:
  *               orderId:
  *                 type: integer
- *                 description: ID do pedido
+ *                 description: The order ID
  *               amount:
  *                 type: number
  *                 format: float
- *                 description: Valor pago
+ *                 description: The paid amount
  *               paymentMethod:
  *                 type: string
  *                 enum: [PIX, CREDIT_CARD, DEBIT_CARD]
  *                 default: PIX
- *                 description: Método de pagamento utilizado
+ *                 description: The payment method used
  *     responses:
  *       200:
- *         description: Pagamento confirmado com sucesso
+ *         description: Payment confirmed successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1129,23 +1129,23 @@ import { PaymentController } from "../controllers/PaymentController";
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Pagamento confirmado com sucesso
+ *                   example: Payment confirmed successfully
  *                 payment:
  *                   $ref: '#/components/schemas/Payment'
  *       400:
- *         description: Pedido não está no status PAYMENT
+ *         description: Order is not in PAYMENT status
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: Pedido não encontrado
+ *         description: Order not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       500:
- *         description: Erro ao processar a confirmação do pagamento
+ *         description: Error processing payment confirmation
  *         content:
  *           application/json:
  *             schema:
