@@ -118,16 +118,16 @@ npm run dev
 
 ```bash
 # Construir e iniciar os containers
-docker-compose up -d
+docker compose up -d
 
 # Ver logs da aplicação
-docker-compose logs -f fastfood-api
+docker compose logs -f fastfood-api
 
 # Parar os containers
-docker-compose down
+docker compose down
 
 # Reconstruir os containers após alterações
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Comandos TypeORM
