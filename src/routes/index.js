@@ -115,7 +115,7 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *           description: The unit price of the product
  *         observation:
  *           type: string
- *           description: Observações específicas para este item do pedido
+ *           description: Specific observations for this order item
  *     
  *     Customer:
  *       type: object
@@ -361,7 +361,7 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *                 $ref: '#/components/schemas/Order'
  *   post:
  *     tags: [Orders]
- *     summary: Iniciar um novo pedido
+ *     summary: Create a new order
  *     requestBody:
  *       required: true
  *       content:
@@ -373,10 +373,10 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *             properties:
  *               customerId:
  *                 type: integer
- *                 description: ID do cliente que fez o pedido
+ *                 description: ID of the customer who placed the order
  *               items:
  *                 type: array
- *                 description: Lista de itens do pedido (opcional)
+ *                 description: List of order items (optional)
  *                 items:
  *                   type: object
  *                   required:
@@ -385,16 +385,16 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *                   properties:
  *                     productId:
  *                       type: integer
- *                       description: ID do produto
+ *                       description: ID of the product
  *                     quantity:
  *                       type: integer
- *                       description: Quantidade do produto
+ *                       description: Quantity of the product
  *                     observation:
  *                       type: string
- *                       description: Observações específicas para este item do pedido
+ *                       description: Specific observations for this order item
  *     responses:
  *       201:
- *         description: Pedido iniciado com sucesso
+ *         description: Order created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -402,46 +402,46 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 id:
  *                   type: integer
- *                   description: ID do pedido criado
+ *                   description: ID of the created order
  *                 customerId:
  *                   type: integer
- *                   description: ID do cliente
+ *                   description: ID of the customer
  *                 status:
  *                   type: string
  *                   enum: [PENDING, PREPARING, READY, PAYMENT, COMPLETED, DELIVERED, CANCELLED]
- *                   description: Status do pedido
+ *                   description: Status of the order
  *                 totalAmount:
  *                   type: number
  *                   format: float
- *                   description: Valor total do pedido (0.00 se não houver itens)
+ *                   description: Total amount of the order (0.00 if no items)
  *                 items:
  *                   type: array
- *                   description: Lista de itens do pedido (vazia se não houver itens)
+ *                   description: List of order items (empty if no items)
  *                   items:
  *                     type: object
  *                     properties:
  *                       id:
  *                         type: integer
- *                         description: ID do item do pedido
+ *                         description: ID of the order item
  *                       productId:
  *                         type: integer
- *                         description: ID do produto
+ *                         description: ID of the product
  *                       quantity:
  *                         type: integer
- *                         description: Quantidade do produto
+ *                         description: Quantity of the product
  *                       unitPrice:
  *                         type: number
  *                         format: float
- *                         description: Preço unitário do produto
+ *                         description: Unit price of the product
  *                       observation:
  *                         type: string
- *                         description: Observações específicas para este item do pedido
+ *                         description: Specific observations for this order item
  *       400:
- *         description: Dados inválidos
+ *         description: Invalid input
  *       404:
- *         description: Cliente não encontrado
+ *         description: Customer not found
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  * 
  * /orders/{id}:
  *   get:
@@ -525,11 +525,11 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  * /orders/ready:
  *   get:
  *     tags: [Orders]
- *     summary: Listar pedidos prontos
- *     description: Retorna todos os pedidos com status READY
+ *     summary: List ready orders
+ *     description: Returns all orders with status READY
  *     responses:
  *       200:
- *         description: Lista de pedidos prontos
+ *         description: List of ready orders
  *         content:
  *           application/json:
  *             schema:
@@ -537,7 +537,7 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               items:
  *                 $ref: '#/components/schemas/Order'
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -545,29 +545,29 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  * 
  * /orders/{id}/prepare:
  *   put:
  *     tags: [Orders]
- *     summary: Iniciar preparo do pedido
- *     description: Altera o status do pedido para PREPARING
+ *     summary: Start preparing order
+ *     description: Changes the order status to PREPARING
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do pedido
+ *         description: Order ID
  *     responses:
  *       200:
- *         description: Pedido iniciado com sucesso
+ *         description: Order preparation started successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       400:
- *         description: Erro de validação
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
@@ -575,9 +575,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       404:
- *         description: Pedido não encontrado
+ *         description: Order not found
  *         content:
  *           application/json:
  *             schema:
@@ -585,9 +585,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -595,19 +595,19 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  * 
  * /orders/{id}/items:
  *   post:
  *     tags: [Orders]
- *     summary: Adicionar item a um pedido
+ *     summary: Add item to an order
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do pedido
+ *         description: Order ID
  *     requestBody:
  *       required: true
  *       content:
@@ -619,33 +619,33 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *             properties:
  *               productId:
  *                 type: integer
- *                 description: ID do produto a ser adicionado
+ *                 description: ID of the product to be added
  *               observation:
  *                 type: string
- *                 description: Observações específicas para este item do pedido
+ *                 description: Specific observations for this order item
  *     responses:
  *       201:
- *         description: Item adicionado com sucesso
+ *         description: Item added successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       400:
- *         description: Dados inválidos ou pedido cancelado/completo
+ *         description: Invalid input or order cancelled/completed
  *       404:
- *         description: Pedido ou produto não encontrado
+ *         description: Order or product not found
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  *   delete:
  *     tags: [Orders]
- *     summary: Remover item de um pedido
+ *     summary: Remove item from an order
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do pedido
+ *         description: Order ID
  *     requestBody:
  *       required: true
  *       content:
@@ -657,20 +657,20 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *             properties:
  *               itemId:
  *                 type: integer
- *                 description: ID do item a ser removido do pedido
+ *                 description: ID of the item to be removed from the order
  *     responses:
  *       200:
- *         description: Item removido com sucesso
+ *         description: Item removed successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       400:
- *         description: Dados inválidos ou pedido cancelado/completo
+ *         description: Invalid input or order cancelled/completed
  *       404:
- *         description: Pedido ou item não encontrado
+ *         description: Order or item not found
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  * 
  * /customers:
  *   get:
@@ -801,28 +801,27 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *       404:
  *         description: Customer not found
  * 
- * @swagger
  * /orders/{id}/complete:
  *   put:
  *     tags: [Orders]
- *     summary: Finalizar pedido
- *     description: Altera o status do pedido para COMPLETED
+ *     summary: Complete order
+ *     description: Changes the order status to COMPLETED
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do pedido
+ *         description: Order ID
  *     responses:
  *       200:
- *         description: Pedido finalizado com sucesso
+ *         description: Order completed successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       400:
- *         description: Erro de validação
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
@@ -830,9 +829,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       404:
- *         description: Pedido não encontrado
+ *         description: Order not found
  *         content:
  *           application/json:
  *             schema:
@@ -840,9 +839,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -850,30 +849,29 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  * 
- * @swagger
  * /orders/{id}/confirm-pickup:
  *   put:
  *     tags: [Orders]
- *     summary: Confirmar entrega do pedido
- *     description: Altera o status do pedido para DELIVERED quando o pedido está finalizado
+ *     summary: Confirm order delivery
+ *     description: Changes the order status to DELIVERED when the order is finalized
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do pedido
+ *         description: Order ID
  *     responses:
  *       200:
- *         description: Pedido entregue com sucesso
+ *         description: Order delivered successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       400:
- *         description: Erro de validação
+ *         description: Validation error
  *         content:
  *           application/json:
  *             schema:
@@ -881,9 +879,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       404:
- *         description: Pedido não encontrado
+ *         description: Order not found
  *         content:
  *           application/json:
  *             schema:
@@ -891,9 +889,9 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  *       500:
- *         description: Erro interno do servidor
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -901,7 +899,7 @@ const { CustomerEntity } = require('../modules/customer/adapters/out/persistence
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Mensagem de erro
+ *                   description: Error message
  */
 
 function setupRoutes(categoryModule, productModule, customerModule) {
