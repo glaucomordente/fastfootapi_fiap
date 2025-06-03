@@ -140,6 +140,58 @@ npm run migration:generate -- nome-da-migracao
 npm run migration:run
 ```
 
+## Fluxo de Status dos Pedidos
+
+Os pedidos no sistema passam por diferentes status que representam seu ciclo de vida completo, desde a criação até a entrega ao cliente. Abaixo está a explicação de cada status e o fluxo típico de um pedido:
+
+### Status Disponíveis
+
+1. **IN_CART** - O cliente adicionou itens ao carrinho, mas ainda não finalizou o pedido.
+2. **PAYMENT_PENDING** - O pedido foi criado e está aguardando a confirmação do pagamento.
+3. **PAYMENT_CONFIRMED** - O pagamento foi processado com sucesso e o pedido está pronto para ser preparado.
+4. **IN_PREPARATION** - A cozinha está ativamente preparando o pedido.
+5. **READY_FOR_PICKUP** - O pedido está pronto e aguardando que o cliente o retire.
+6. **PICKED_UP** - O cliente retirou o pedido.
+7. **COMPLETED** - O pedido foi finalizado com sucesso.
+8. **CANCELED** - O pedido foi cancelado pelo cliente ou pelo restaurante antes da conclusão.
+
+### Fluxo Típico de um Pedido
+
+```
+IN_CART → PAYMENT_PENDING → PAYMENT_CONFIRMED → IN_PREPARATION → READY_FOR_PICKUP → PICKED_UP → COMPLETED
+```
+
+### Transições de Status Possíveis
+
+- Um pedido em **PAYMENT_PENDING** pode ser:
+  - Atualizado para **PAYMENT_CONFIRMED** quando o pagamento é processado
+  - Atualizado para **CANCELED** se o pagamento falhar ou o cliente cancelar
+
+- Um pedido em **PAYMENT_CONFIRMED** pode ser:
+  - Atualizado para **IN_PREPARATION** quando a cozinha começa a preparar
+  - Atualizado para **CANCELED** se houver algum problema (ex: falta de ingredientes)
+
+- Um pedido em **IN_PREPARATION** pode ser:
+  - Atualizado para **READY_FOR_PICKUP** quando estiver pronto
+  - Atualizado para **CANCELED** em casos excepcionais
+
+- Um pedido em **READY_FOR_PICKUP** pode ser:
+  - Atualizado para **PICKED_UP** quando o cliente retirar
+  - Atualizado para **CANCELED** se o cliente não buscar após um longo período
+
+- Um pedido em **PICKED_UP** é automaticamente considerado **COMPLETED**
+
+- Um pedido **CANCELED** não pode mudar para nenhum outro status
+
+### Endpoints para Gerenciamento de Status
+
+- `PUT /api/orders/{id}/status` - Atualiza o status de um pedido
+- `PUT /api/orders/{id}/cancel` - Cancela um pedido
+- `PUT /api/orders/{id}/prepare` - Inicia a preparação de um pedido
+- `PUT /api/orders/{id}/complete` - Marca um pedido como pronto para retirada
+- `PUT /api/orders/{id}/confirm-pickup` - Confirma que o cliente retirou o pedido
+- `POST /api/payments/confirm` - Confirma o pagamento de um pedido
+
 ## Documentação da API
 
 A documentação da API está disponível em `/api-docs` quando o servidor estiver em execução.
