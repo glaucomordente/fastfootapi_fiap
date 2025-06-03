@@ -151,3 +151,13 @@
 {"level":"info","message":"Database connection established successfully"}
 {"level":"info","message":"Database connection established"}
 {"level":"info","message":"aaaaaaaaaa[object Object]"}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"error","message":"Failed to connect to the database. Please make sure PostgreSQL is running."}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}
+{"level":"info","message":"Database connection established successfully"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Modules initialized"}

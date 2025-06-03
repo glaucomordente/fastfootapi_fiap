@@ -1,51 +1,42 @@
-import { Category, CategoryDTO } from '../../entities/Category';
+import { Category } from '../../entities/Category';
 
 /**
- * CategoryRepository Interface (Output Port)
+ * CategoryRepository interface
  * 
- * This interface defines the operations for persisting and retrieving categories.
- * It serves as the secondary output port for the hexagonal architecture.
- * Adapters will implement this interface to provide actual data access.
+ * This interface defines the contract for the repository that handles Category entities.
+ * It follows the repository pattern and is part of the hexagonal architecture.
  */
 export interface CategoryRepository {
   /**
    * Find all categories
-   * @returns Promise resolving to an array of CategoryDTO objects
+   * @returns Promise with an array of categories
    */
-  findAll(): Promise<CategoryDTO[]>;
+  findAll(): Promise<Category[]>;
   
   /**
    * Find a category by its ID
-   * @param id The ID of the category to find
-   * @returns Promise resolving to a CategoryDTO or null if not found
+   * @param id The category ID
+   * @returns Promise with the category or null if not found
    */
-  findById(id: number): Promise<CategoryDTO | null>;
+  findById(id: number): Promise<Category | null>;
   
   /**
-   * Save a new category
-   * @param category The category entity to save
-   * @returns Promise resolving to the saved CategoryDTO with generated ID
+   * Save a category (create or update)
+   * @param category The category to save
+   * @returns Promise with the saved category
    */
-  save(category: Category): Promise<CategoryDTO>;
-  
-  /**
-   * Update an existing category
-   * @param category The category entity to update
-   * @returns Promise resolving to the updated CategoryDTO or null if not found
-   */
-  update(category: Category): Promise<CategoryDTO | null>;
+  save(category: Category): Promise<Category>;
   
   /**
    * Delete a category by its ID
-   * @param id The ID of the category to delete
-   * @returns Promise resolving to true if deleted, false if not found
+   * @param id The category ID
+   * @returns Promise with a boolean indicating if the category was deleted
    */
   delete(id: number): Promise<boolean>;
   
   /**
-   * Check if a category has associated products
-   * @param id The ID of the category to check
-   * @returns Promise resolving to true if the category has products, false otherwise
+   * Initialize the repository
+   * This method should be called before using the repository
    */
-  hasProducts(id: number): Promise<boolean>;
+  initialize?(): Promise<void>;
 }

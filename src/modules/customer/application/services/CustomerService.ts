@@ -1,5 +1,5 @@
 import { Customer, CustomerDTO } from "../../domain/entities/Customer";
-import { CustomerUseCase } from "../../domain/ports/in/CustomerUseCase";
+import { CustomerUseCase, Order } from "../../domain/ports/in/CustomerUseCase";
 import { CustomerRepository } from "../../domain/ports/out/CustomerRepository";
 
 /**
@@ -11,39 +11,59 @@ import { CustomerRepository } from "../../domain/ports/out/CustomerRepository";
 export class CustomerService implements CustomerUseCase {
   constructor(private readonly customerRepository: CustomerRepository) {}
 
-  async getAllCustomers(): Promise<Customer[]> {
+  /**
+   * Find all customers
+   */
+  async findAll(): Promise<Customer[]> {
     return this.customerRepository.findAll();
   }
 
-  async getCustomerById(id: number): Promise<Customer | null> {
+  /**
+   * Find a customer by ID
+   */
+  async findById(id: number): Promise<Customer | null> {
     return this.customerRepository.findById(id);
   }
 
-  async createCustomer(customerData: CustomerDTO): Promise<Customer> {
-    const customer = Customer.fromDTO(customerData);
-    return this.customerRepository.create(customerData);
+  /**
+   * Find a customer by email
+   */
+  async findByEmail(email: string): Promise<Customer | null> {
+    return this.customerRepository.findByEmail(email);
   }
 
-  async updateCustomer(id: number, customerData: CustomerDTO): Promise<Customer> {
+  /**
+   * Find a customer by CPF
+   */
+  async findByCPF(cpf: string): Promise<Customer | null> {
+    return this.customerRepository.findByCPF(cpf);
+  }
+
+  /**
+   * Save a customer (create or update)
+   */
+  async save(customer: Customer): Promise<Customer> {
+    return this.customerRepository.save(customer);
+  }
+
+  /**
+   * Delete a customer
+   */
+  async delete(id: number): Promise<boolean> {
     const existingCustomer = await this.customerRepository.findById(id);
     if (!existingCustomer) {
       throw new Error("Customer not found");
     }
 
-    const updatedCustomer = Customer.fromDTO({
-      ...customerData,
-      id
-    });
-
-    return this.customerRepository.update(id, customerData);
+    return this.customerRepository.delete(id);
   }
 
-  async deleteCustomer(id: number): Promise<void> {
-    const existingCustomer = await this.customerRepository.findById(id);
-    if (!existingCustomer) {
-      throw new Error("Customer not found");
-    }
-
-    await this.customerRepository.delete(id);
+  /**
+   * Get all orders for a specific customer
+   */
+  async getCustomerOrders(customerId: number): Promise<Order[]> {
+    // This would typically call an OrderRepository to get orders by customer ID
+    // For now, we'll return an empty array as a placeholder
+    return [];
   }
 }

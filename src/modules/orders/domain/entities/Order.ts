@@ -98,13 +98,14 @@ export class OrderItem {
 
 // Order status enum
 export enum OrderStatus {
-  PENDING = 'PENDING',
-  PREPARING = 'PREPARING',
-  READY = 'READY',
-  PAYMENT = 'PAYMENT',
-  COMPLETED = 'COMPLETED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  IN_CART = 'IN_CART',                   // The customer has added items to their cart but hasn't submitted the order yet
+  PAYMENT_PENDING = 'PAYMENT_PENDING',   // The order is awaiting payment confirmation
+  PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED', // Payment has been successfully processed
+  IN_PREPARATION = 'IN_PREPARATION',     // The kitchen is actively preparing the order
+  READY_FOR_PICKUP = 'READY_FOR_PICKUP', // The order is complete and ready for the customer to pick up
+  PICKED_UP = 'PICKED_UP',                // The customer has picked up
+  COMPLETED = 'COMPLETED',               // The order ir completed
+  CANCELED = 'CANCELED'                  // The order was cancelled by the customer or restaurant before completion
 }
 
 // Data Transfer Object interfaces

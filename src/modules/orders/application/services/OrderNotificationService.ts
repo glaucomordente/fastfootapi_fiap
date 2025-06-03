@@ -1,4 +1,4 @@
-import { Order } from "../../domain/entities/Order";
+import { Order, OrderStatus } from "../../domain/entities/Order";
 import { OrderRepository } from "../../domain/repositories/OrderRepository";
 
 export class OrderNotificationService {
@@ -16,7 +16,7 @@ export class OrderNotificationService {
     console.log(`Notifying customer ${order.customerId} that order ${orderId} is ready`);
     
     // Update order status
-    order.status = "READY_FOR_PICKUP";
+    order.status = OrderStatus.READY_FOR_PICKUP;
     await this.orderRepository.save(order);
   }
-} 
+}

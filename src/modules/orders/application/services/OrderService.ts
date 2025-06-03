@@ -65,7 +65,7 @@ export class OrderService implements OrderUseCase {
     // Create order entity with validation
     const order = new Order();
     order.customerId = orderData.customerId.toString();
-    order.status = OrderStatus.PENDING;
+    order.status = OrderStatus.PAYMENT_PENDING;
     
     // Save to repository
     return this.orderRepository.save(order);
@@ -100,8 +100,8 @@ export class OrderService implements OrderUseCase {
       return false;
     }
     
-    // Only allow deleting orders that are PENDING or CANCELLED
-    if (existingOrderDTO.status !== OrderStatus.PENDING && existingOrderDTO.status !== OrderStatus.CANCELLED) {
+    // Only allow deleting orders that are PAYMENT_PENDING or CANCELED
+    if (existingOrderDTO.status !== OrderStatus.PAYMENT_PENDING && existingOrderDTO.status !== OrderStatus.CANCELED) {
       throw new Error(`Cannot delete order with status ${existingOrderDTO.status}`);
     }
     

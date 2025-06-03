@@ -34,7 +34,9 @@ export class ProductModule {
   async initialize(): Promise<void> {
     if (!this.initialized) {
       // Initialize the repository
-      await (this.productRepository as TypeORMProductRepository).initialize();
+      if (this.productRepository instanceof TypeORMProductRepository) {
+        await this.productRepository.initialize();
+      }
       this.initialized = true;
     }
   }

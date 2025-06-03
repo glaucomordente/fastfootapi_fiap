@@ -16,15 +16,18 @@ export class ProductService implements ProductUseCase {
   }
 
   async getAllProducts(): Promise<ProductDTO[]> {
-    return this.productRepository.findAll();
+    const products = await this.productRepository.findAll();
+    return products.map(product => product.toDTO());
   }
 
   async getProductById(id: number): Promise<ProductDTO | null> {
-    return this.productRepository.findById(id);
+    const product = await this.productRepository.findById(id);
+    return product ? product.toDTO() : null;
   }
 
   async getProductsByCategory(categoryId: number): Promise<ProductDTO[]> {
-    return this.productRepository.findByCategoryId(categoryId);
+    const products = await this.productRepository.findByCategoryId(categoryId);
+    return products.map(product => product.toDTO());
   }
 
   async createProduct(productData: Omit<ProductDTO, 'id'>): Promise<ProductDTO> {
@@ -48,7 +51,8 @@ export class ProductService implements ProductUseCase {
     );
 
     // Save to repository
-    return this.productRepository.save(product);
+    const savedProduct = await this.productRepository.save(product);
+    return savedProduct.toDTO();
   }
 
   async updateProduct(id: number, productData: Partial<Omit<ProductDTO, 'id'>>): Promise<ProductDTO | null> {
@@ -90,7 +94,8 @@ export class ProductService implements ProductUseCase {
     }
 
     // Update in repository
-    return this.productRepository.update(product);
+    const updatedProduct = await this.productRepository.update(product);
+    return updatedProduct ? updatedProduct.toDTO() : null;
   }
 
   async deleteProduct(id: number): Promise<boolean> {

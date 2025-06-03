@@ -8,6 +8,8 @@ import { getDataSource } from "./lib/typeorm";
 import { CategoryModule } from "./modules/categories/CategoryModule";
 import { ProductModule } from "./modules/products/ProductModule";
 import { CustomerModule } from "./modules/customer/CustomerModule";
+import { OrderModule } from "./modules/orders/OrderModule";
+import { PaymentModule } from "./modules/payments/PaymentModule";
 import { runSeeds } from "./database/seeds";
 import path from "path";
 
@@ -29,7 +31,7 @@ const swaggerOptions = {
     info: {
       title: "FastFoodAPI",
       version: "1.0.0",
-      description: "API para sistema de autoatendimento de fast food",
+      description: "API for fast food self-service system",
     },
     servers: [
       {
@@ -52,8 +54,8 @@ const swaggerOptions = {
     },
   },
   apis: [
-    path.resolve(__dirname, "./routes/index.js"),
-    path.resolve(__dirname, "./controllers/*.ts"),
+    path.resolve(__dirname, "./routes/index.ts"),
+    path.resolve(__dirname, "./modules/**/adapters/in/web/*.ts"),
   ],
 };
 
@@ -83,14 +85,23 @@ async function bootstrap() {
     const categoryModule = new CategoryModule();
     const productModule = new ProductModule();
     const customerModule = new CustomerModule();
+    const orderModule = new OrderModule();
+    const paymentModule = new PaymentModule();
 
     await categoryModule.initialize();
     await productModule.initialize();
     winston.info("Modules initialized");
 
     // Setup routes
-    const setupRoutes = require("./routes");
-    app.use("/api", setupRoutes(categoryModule, productModule, customerModule));
+    // Import the routes directly from the TypeScript file
+    const setupRoutes = (await import("./routes")).default;
+    app.use("/api", await setupRoutes(
+      categoryModule, 
+      productModule, 
+      customerModule,
+      orderModule,
+      paymentModule
+    ));
 
     // Start server
     const PORT = process.env.PORT || 3000;

@@ -1,139 +1,264 @@
 import { Request, Response } from 'express';
 import { CategoryUseCase } from '../../../domain/ports/in/CategoryUseCase';
+import { Category, CategoryDTO } from '../../../domain/entities/Category';
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Category:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: The category ID
+ *         name:
+ *           type: string
+ *           description: The category name
+ *         description:
+ *           type: string
+ *           description: The category description
+ *       example:
+ *         id: 1
+ *         name: Burgers
+ *         description: Delicious hamburgers
+ */
 
 /**
  * CategoryController
  * 
- * This controller serves as an input adapter for the web interface.
- * It translates HTTP requests into calls to the CategoryUseCase (input port).
+ * This controller handles HTTP requests related to categories.
+ * It follows the hexagonal architecture pattern as an input adapter.
  */
 export class CategoryController {
-  private categoryUseCase: CategoryUseCase;
-
-  constructor(categoryUseCase: CategoryUseCase) {
-    this.categoryUseCase = categoryUseCase;
-  }
+  constructor(private categoryUseCase: CategoryUseCase) {}
 
   /**
-   * Get all categories
+   * @swagger
+   * /categories:
+   *   get:
+   *     summary: Returns all categories
+   *     tags: [Categories]
+   *     responses:
+   *       200:
+   *         description: The list of categories
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/Category'
+   *       500:
+   *         description: Internal server error
    */
-  getAllCategories = async (req: Request, res: Response) => {
+  async getAllCategories(req: Request, res: Response): Promise<Response> {
     try {
-      const categories = await this.categoryUseCase.getAllCategories();
+      const categories = await this.categoryUseCase.findAll();
       return res.status(200).json(categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
-  };
+  }
 
   /**
-   * Get a category by ID
+   * @swagger
+   * /categories/{id}:
+   *   get:
+   *     summary: Get a category by id
+   *     tags: [Categories]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: The category id
+   *     responses:
+   *       200:
+   *         description: The category
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Category'
+   *       404:
+   *         description: Category not found
+   *       500:
+   *         description: Internal server error
    */
-  getCategoryById = async (req: Request, res: Response) => {
+  async getCategoryById(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const category = await this.categoryUseCase.getCategoryById(Number(id));
-      
+      const category = await this.categoryUseCase.findById(Number(id));
+
       if (!category) {
         return res.status(404).json({ error: 'Category not found' });
       }
-      
+
       return res.status(200).json(category);
     } catch (error) {
       console.error('Error fetching category:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
-  };
+  }
 
   /**
-   * Create a new category
+   * @swagger
+   * /categories:
+   *   post:
+   *     summary: Create a new category
+   *     tags: [Categories]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 description: The category name
+   *               description:
+   *                 type: string
+   *                 description: The category description
+   *     responses:
+   *       201:
+   *         description: The created category
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Category'
+   *       400:
+   *         description: Bad request - missing required fields
+   *       500:
+   *         description: Internal server error
    */
-  createCategory = async (req: Request, res: Response) => {
+  async createCategory(req: Request, res: Response): Promise<Response> {
     try {
       const { name, description } = req.body;
-      
+
       if (!name) {
         return res.status(400).json({ error: 'Name is required' });
       }
-      
-      const newCategory = await this.categoryUseCase.createCategory({
+
+      const categoryData: CategoryDTO = {
+        id: null, // Will be assigned by the database
         name,
-        description
-      });
-      
-      return res.status(201).json(newCategory);
+        description: description || null
+      };
+
+      const newCategory = Category.fromDTO(categoryData);
+      const savedCategory = await this.categoryUseCase.save(newCategory);
+      return res.status(201).json(savedCategory);
     } catch (error) {
       console.error('Error creating category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category name')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
       return res.status(500).json({ error: 'Internal server error' });
     }
-  };
+  }
 
   /**
-   * Update an existing category
+   * @swagger
+   * /categories/{id}:
+   *   put:
+   *     summary: Update a category
+   *     tags: [Categories]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: The category id
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 description: The category name
+   *               description:
+   *                 type: string
+   *                 description: The category description
+   *     responses:
+   *       200:
+   *         description: The updated category
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Category'
+   *       404:
+   *         description: Category not found
+   *       500:
+   *         description: Internal server error
    */
-  updateCategory = async (req: Request, res: Response) => {
+  async updateCategory(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
       const { name, description } = req.body;
-      
-      const updatedCategory = await this.categoryUseCase.updateCategory(Number(id), {
-        name,
-        description
-      });
-      
-      if (!updatedCategory) {
+
+      const existingCategory = await this.categoryUseCase.findById(Number(id));
+      if (!existingCategory) {
         return res.status(404).json({ error: 'Category not found' });
       }
-      
-      return res.status(200).json(updatedCategory);
+
+      // Update the category fields
+      if (name !== undefined) {
+        existingCategory.updateName(name);
+      }
+      if (description !== undefined) {
+        existingCategory.updateDescription(description);
+      }
+
+      const savedCategory = await this.categoryUseCase.save(existingCategory);
+      return res.status(200).json(savedCategory);
     } catch (error) {
       console.error('Error updating category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category name')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
       return res.status(500).json({ error: 'Internal server error' });
     }
-  };
+  }
 
   /**
-   * Delete a category
+   * @swagger
+   * /categories/{id}:
+   *   delete:
+   *     summary: Delete a category
+   *     tags: [Categories]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: The category id
+   *     responses:
+   *       204:
+   *         description: Category deleted successfully
+   *       404:
+   *         description: Category not found
+   *       500:
+   *         description: Internal server error
    */
-  deleteCategory = async (req: Request, res: Response) => {
+  async deleteCategory(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      
-      const deleted = await this.categoryUseCase.deleteCategory(Number(id));
-      
-      if (!deleted) {
+      const existingCategory = await this.categoryUseCase.findById(Number(id));
+
+      if (!existingCategory) {
         return res.status(404).json({ error: 'Category not found' });
       }
-      
+
+      await this.categoryUseCase.delete(Number(id));
       return res.status(204).send();
     } catch (error) {
       console.error('Error deleting category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Cannot delete category with associated products')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
       return res.status(500).json({ error: 'Internal server error' });
     }
-  };
+  }
 }

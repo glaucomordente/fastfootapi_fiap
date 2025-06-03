@@ -12,18 +12,18 @@ export class CustomerEntity {
   id: number;
 
   @Column()
-  @IsNotEmpty({ message: 'O nome é obrigatório' })
-  @Length(3, 100, { message: 'O nome deve ter entre 3 e 100 caracteres' })
+  @IsNotEmpty({ message: 'Name is required' })
+  @Length(3, 100, { message: 'Name must be between 3 and 100 characters' })
   name: string;
 
   @Column({ unique: true })
-  @IsEmail({}, { message: 'Email inválido' })
-  @IsNotEmpty({ message: 'O email é obrigatório' })
+  @IsEmail({}, { message: 'Invalid email' })
+  @IsNotEmpty({ message: 'Email is required' })
   email: string;
 
   @Column({ unique: true })
-  @IsNotEmpty({ message: 'O CPF é obrigatório' })
-  @Length(11, 11, { message: 'O CPF deve ter 11 dígitos' })
+  @IsNotEmpty({ message: 'CPF is required' })
+  @Length(11, 11, { message: 'CPF must have 11 digits' })
   cpf: string;
 
   @Column({ nullable: true })

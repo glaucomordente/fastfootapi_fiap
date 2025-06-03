@@ -26,7 +26,7 @@ export class OrderEntity {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.PENDING
+    default: OrderStatus.IN_CART
   })
   status: OrderStatus;
 

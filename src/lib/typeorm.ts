@@ -15,7 +15,10 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || "fastfood_db",
   synchronize: process.env.NODE_ENV !== "production", // Auto-create database schema in non-production environments
   logging: process.env.NODE_ENV !== "production",
-  entities: ["src/modules/**/adapters/out/persistence/entities/*.entity.ts"],
+  entities: [
+    "src/modules/**/adapters/out/persistence/entities/*.entity.ts",
+    "src/database/entities/*.ts"
+  ],
   migrations: ["src/database/migrations/*.ts"],
   connectTimeoutMS: 10000,
 });

@@ -1,45 +1,67 @@
-import { Customer, CustomerDTO } from "../../entities/Customer";
+import { Customer } from "../../entities/Customer";
+
+// Simple Order interface for use within the customer module
+export interface Order {
+  id: string | number;
+  customerId?: string | number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Add other properties as needed
+}
 
 /**
- * CustomerUseCase Interface (Input Port)
- *
- * This interface defines the operations that can be performed on customers.
- * It serves as the primary input port for the hexagonal architecture.
- * Application services will implement this interface to provide the actual business logic.
+ * CustomerUseCase interface
+ * 
+ * This interface defines the contract for the application service that handles customer use cases.
+ * It follows the hexagonal architecture pattern as an input port.
  */
 export interface CustomerUseCase {
   /**
-   * Get all customers
-   * @returns Promise resolving to an array of CustomerDTO objects
+   * Find all customers
+   * @returns Promise with an array of customers
    */
-  getAllCustomers(): Promise<CustomerDTO[]>;
-
+  findAll(): Promise<Customer[]>;
+  
   /**
-   * Get a customer by its ID
-   * @param id The ID of the customer to retrieve
-   * @returns Promise resolving to a CustomerDTO or null if not found
+   * Find a customer by its ID
+   * @param id The customer ID
+   * @returns Promise with the customer or null if not found
    */
-  getCustomerById(id: number): Promise<CustomerDTO | null>;
-
+  findById(id: number): Promise<Customer | null>;
+  
   /**
-   * Create a new customer
-   * @param customerData The data for the new customer
-   * @returns Promise resolving to the created CustomerDTO
+   * Find a customer by email
+   * @param email The customer email
+   * @returns Promise with the customer or null if not found
    */
-  createCustomer(customer: CustomerDTO): Promise<Customer>;
-
+  findByEmail(email: string): Promise<Customer | null>;
+  
   /**
-   * Update an existing customer
-   * @param id The ID of the customer to update
-   * @param customerData The updated customer data
-   * @returns Promise resolving to the updated CustomerDTO or null if not found
+   * Find a customer by CPF
+   * @param cpf The customer CPF
+   * @returns Promise with the customer or null if not found
    */
-  updateCustomer(id: number, customer: CustomerDTO): Promise<Customer | null>;
-
+  findByCPF(cpf: string): Promise<Customer | null>;
+  
   /**
-   * Delete a customer
-   * @param id The ID of the customer to delete
-   * @returns Promise resolving to true if deleted, false if not found
+   * Save a customer (create or update)
+   * @param customer The customer to save
+   * @returns Promise with the saved customer
    */
-  deleteCustomer(id: number): Promise<void>;
+  save(customer: Customer): Promise<Customer>;
+  
+  /**
+   * Delete a customer by its ID
+   * @param id The customer ID
+   * @returns Promise with a boolean indicating if the customer was deleted
+   */
+  delete(id: number): Promise<boolean>;
+  
+  /**
+   * Get all orders for a specific customer
+   * @param customerId The customer ID
+   * @returns Promise with an array of orders
+   */
+  getCustomerOrders(customerId: number): Promise<Order[]>;
 }

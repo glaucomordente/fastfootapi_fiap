@@ -31,25 +31,28 @@ export class TypeORMProductRepository implements ProductRepository {
     this.categoryRepository = dataSource.getRepository(CategoryEntity);
   }
 
-  async findAll(): Promise<ProductDTO[]> {
+  async findAll(): Promise<Product[]> {
     const products = await this.productRepository.find({
       relations: ['category']
     });
 
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    }));
+    return products.map(product => {
+      const productDTO: ProductDTO = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        categoryId: product.categoryId,
+        stock: product.stock,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
+      };
+      return Product.fromDTO(productDTO);
+    });
   }
 
-  async findById(id: number): Promise<ProductDTO | null> {
+  async findById(id: number): Promise<Product | null> {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: ['category']
@@ -59,7 +62,7 @@ export class TypeORMProductRepository implements ProductRepository {
       return null;
     }
 
-    return {
+    const productDTO: ProductDTO = {
       id: product.id,
       name: product.name,
       description: product.description,
@@ -70,28 +73,33 @@ export class TypeORMProductRepository implements ProductRepository {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     };
+    
+    return Product.fromDTO(productDTO);
   }
 
-  async findByCategoryId(categoryId: number): Promise<ProductDTO[]> {
+  async findByCategoryId(categoryId: number): Promise<Product[]> {
     const products = await this.productRepository.find({
       where: { categoryId },
       relations: ['category']
     });
 
-    return products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    }));
+    return products.map(product => {
+      const productDTO: ProductDTO = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        categoryId: product.categoryId,
+        stock: product.stock,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
+      };
+      return Product.fromDTO(productDTO);
+    });
   }
 
-  async save(product: Product): Promise<ProductDTO> {
+  async save(product: Product): Promise<Product> {
     const productEntity = new ProductEntity();
     productEntity.name = product.name;
     productEntity.description = product.description;
@@ -103,7 +111,7 @@ export class TypeORMProductRepository implements ProductRepository {
 
     const savedProduct = await this.productRepository.save(productEntity);
 
-    return {
+    const productDTO: ProductDTO = {
       id: savedProduct.id,
       name: savedProduct.name,
       description: savedProduct.description,
@@ -114,9 +122,11 @@ export class TypeORMProductRepository implements ProductRepository {
       createdAt: savedProduct.createdAt,
       updatedAt: savedProduct.updatedAt
     };
+    
+    return Product.fromDTO(productDTO);
   }
 
-  async update(product: Product): Promise<ProductDTO | null> {
+  async update(product: Product): Promise<Product | null> {
     // Ensure product has an ID
     if (product.id === null) {
       throw new Error('Cannot update product without ID');
@@ -142,7 +152,7 @@ export class TypeORMProductRepository implements ProductRepository {
 
     const updatedProduct = await this.productRepository.save(existingProduct);
 
-    return {
+    const productDTO: ProductDTO = {
       id: updatedProduct.id,
       name: updatedProduct.name,
       description: updatedProduct.description,
@@ -153,6 +163,8 @@ export class TypeORMProductRepository implements ProductRepository {
       createdAt: updatedProduct.createdAt,
       updatedAt: updatedProduct.updatedAt
     };
+    
+    return Product.fromDTO(productDTO);
   }
 
   async delete(id: number): Promise<boolean> {

@@ -1,58 +1,63 @@
-import { Product, ProductDTO } from '../../entities/Product';
+import { Product } from '../../entities/Product';
 
 /**
- * ProductRepository Interface (Output Port)
+ * ProductRepository interface
  * 
- * This interface defines the operations for persisting and retrieving products.
- * It serves as the secondary output port for the hexagonal architecture.
- * Adapters will implement this interface to provide actual data access.
+ * This interface defines the contract for the repository that handles Product entities.
+ * It follows the repository pattern and is part of the hexagonal architecture.
  */
 export interface ProductRepository {
   /**
    * Find all products
-   * @returns Promise resolving to an array of ProductDTO objects
+   * @returns Promise with an array of products
    */
-  findAll(): Promise<ProductDTO[]>;
+  findAll(): Promise<Product[]>;
   
   /**
    * Find a product by its ID
-   * @param id The ID of the product to find
-   * @returns Promise resolving to a ProductDTO or null if not found
+   * @param id The product ID
+   * @returns Promise with the product or null if not found
    */
-  findById(id: number): Promise<ProductDTO | null>;
+  findById(id: number): Promise<Product | null>;
   
   /**
    * Find products by category ID
-   * @param categoryId The ID of the category to filter by
-   * @returns Promise resolving to an array of ProductDTO objects
+   * @param categoryId The category ID
+   * @returns Promise with an array of products
    */
-  findByCategoryId(categoryId: number): Promise<ProductDTO[]>;
+  findByCategoryId(categoryId: number): Promise<Product[]>;
   
   /**
-   * Save a new product
-   * @param product The product entity to save
-   * @returns Promise resolving to the saved ProductDTO with generated ID
+   * Save a product (create or update)
+   * @param product The product to save
+   * @returns Promise with the saved product
    */
-  save(product: Product): Promise<ProductDTO>;
+  save(product: Product): Promise<Product>;
   
   /**
    * Update an existing product
-   * @param product The product entity to update
-   * @returns Promise resolving to the updated ProductDTO or null if not found
+   * @param product The product to update
+   * @returns Promise with the updated product or null if not found
    */
-  update(product: Product): Promise<ProductDTO | null>;
+  update(product: Product): Promise<Product | null>;
   
   /**
    * Delete a product by its ID
-   * @param id The ID of the product to delete
-   * @returns Promise resolving to true if deleted, false if not found
+   * @param id The product ID
+   * @returns Promise with a boolean indicating if the product was deleted
    */
   delete(id: number): Promise<boolean>;
   
   /**
    * Check if a category exists
-   * @param categoryId The ID of the category to check
-   * @returns Promise resolving to true if the category exists, false otherwise
+   * @param categoryId The category ID
+   * @returns Promise with a boolean indicating if the category exists
    */
   categoryExists(categoryId: number): Promise<boolean>;
+  
+  /**
+   * Initialize the repository
+   * This method should be called before using the repository
+   */
+  initialize?(): Promise<void>;
 }
