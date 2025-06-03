@@ -10,6 +10,7 @@ import { ProductModule } from "./modules/products/ProductModule";
 import { CustomerModule } from "./modules/customer/CustomerModule";
 import { runSeeds } from "./database/seeds";
 import path from "path";
+import setupRoutes from "./routes";
 
 dotenv.config();
 
@@ -52,8 +53,8 @@ const swaggerOptions = {
     },
   },
   apis: [
-    path.resolve(__dirname, "./routes/index.js"),
-    path.resolve(__dirname, "./controllers/*.ts"),
+    path.resolve(__dirname, "./routes/index.ts"),
+    path.resolve(__dirname, "./modules/**/*.ts"),
   ],
 };
 
@@ -88,9 +89,12 @@ async function bootstrap() {
     await productModule.initialize();
     winston.info("Modules initialized");
 
-    // Setup routes
-    const setupRoutes = require("./routes");
-    app.use("/api", setupRoutes(categoryModule, productModule, customerModule));
+    const router = await setupRoutes(
+      categoryModule,
+      productModule,
+      customerModule
+    );
+    app.use("/api", router);
 
     // Start server
     const PORT = process.env.PORT || 3000;

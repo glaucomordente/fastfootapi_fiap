@@ -1,10 +1,16 @@
 /**
  * Order Entity
- * 
+ *
  * This is a domain entity that represents an order in our system.
  * It contains the core business logic and validation rules for orders.
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
 @Entity("orders")
 export class Order {
@@ -29,7 +35,7 @@ export class Order {
 
 /**
  * OrderItem Entity
- * 
+ *
  * This is a domain entity that represents an item in an order.
  */
 export class OrderItem {
@@ -50,11 +56,11 @@ export class OrderItem {
   ) {
     // Validate inputs
     if (quantity <= 0) {
-      throw new Error('Quantity must be greater than zero');
+      throw new Error("Quantity must be greater than zero");
     }
 
     if (unitPrice <= 0) {
-      throw new Error('Unit price must be greater than zero');
+      throw new Error("Unit price must be greater than zero");
     }
 
     this._id = id;
@@ -98,13 +104,14 @@ export class OrderItem {
 
 // Order status enum
 export enum OrderStatus {
-  PENDING = 'PENDING',
-  PREPARING = 'PREPARING',
-  READY = 'READY',
-  PAYMENT = 'PAYMENT',
-  COMPLETED = 'COMPLETED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  PENDING = "PENDING",
+  PREPARING = "PREPARING",
+  READY = "READY",
+  READY_TO_PICKUP = "READY_TO_PICKUP",
+  PAYMENT = "PAYMENT",
+  COMPLETED = "COMPLETED",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
 }
 
 // Data Transfer Object interfaces

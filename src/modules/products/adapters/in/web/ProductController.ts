@@ -1,29 +1,29 @@
-import { Request, Response } from 'express';
-import { ProductUseCase } from '../../../domain/ports/in/ProductUseCase';
+import { Request, Response } from "express";
+import { getDataSource } from "../../../../../lib/typeorm";
+import { ProductEntity } from "../../out/persistence/entities/Product.entity";
+import { CategoryEntity } from "../../../../categories/adapters/out/persistence/entities/Category.entity";
 
 /**
  * ProductController
- * 
+ *
  * This controller serves as an input adapter for the web interface.
  * It translates HTTP requests into calls to the ProductUseCase (input port).
  */
 export class ProductController {
-  private productUseCase: ProductUseCase;
-
-  constructor(productUseCase: ProductUseCase) {
-    this.productUseCase = productUseCase;
-  }
-
   /**
    * Get all products
    */
   getAllProducts = async (req: Request, res: Response) => {
     try {
-      const products = await this.productUseCase.getAllProducts();
+      const dataSource = await getDataSource();
+      const productRepository = dataSource.getRepository(ProductEntity);
+      const products = await productRepository.find({
+        relations: ["category"],
+      });
       return res.status(200).json(products);
     } catch (error) {
-      console.error('Error fetching products:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error fetching products:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -33,16 +33,21 @@ export class ProductController {
   getProductById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const product = await this.productUseCase.getProductById(Number(id));
-      
+      const dataSource = await getDataSource();
+      const productRepository = dataSource.getRepository(ProductEntity);
+      const product = await productRepository.findOne({
+        where: { id: Number(id) },
+        relations: ["category"],
+      });
+
       if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
+        return res.status(404).json({ error: "Product not found" });
       }
-      
+
       return res.status(200).json(product);
     } catch (error) {
-      console.error('Error fetching product:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error fetching product:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -52,12 +57,17 @@ export class ProductController {
   getProductsByCategory = async (req: Request, res: Response) => {
     try {
       const { categoryId } = req.params;
-      const products = await this.productUseCase.getProductsByCategory(Number(categoryId));
-      
+      const dataSource = await getDataSource();
+      const productRepository = dataSource.getRepository(ProductEntity);
+      const products = await productRepository.find({
+        where: { categoryId: Number(categoryId) },
+        relations: ["category"],
+      });
+
       return res.status(200).json(products);
     } catch (error) {
-      console.error('Error fetching products by category:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error fetching products by category:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -66,40 +76,45 @@ export class ProductController {
    */
   createProduct = async (req: Request, res: Response) => {
     try {
-      const { name, description, price, imageUrl, categoryId, stock } = req.body;
-      
+      const { name, description, price, imageUrl, categoryId, stock } =
+        req.body;
+
       if (!name || !price || !categoryId) {
-        return res.status(400).json({ error: 'Name, price, and categoryId are required' });
+        return res
+          .status(400)
+          .json({ error: "Name, price, and categoryId are required" });
       }
-      
-      const newProduct = await this.productUseCase.createProduct({
+
+      const dataSource = await getDataSource();
+
+      // Check if category exists
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+      const category = await categoryRepository.findOne({
+        where: { id: Number(categoryId) },
+      });
+
+      if (!category) {
+        return res
+          .status(404)
+          .json({ error: `Category with ID ${categoryId} not found` });
+      }
+
+      const productRepository = dataSource.getRepository(ProductEntity);
+
+      const newProduct = productRepository.create({
         name,
         description,
         price: parseFloat(price),
         imageUrl,
         categoryId: Number(categoryId),
         stock: stock ? Number(stock) : 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
       });
-      
-      return res.status(201).json(newProduct);
+
+      const savedProduct = await productRepository.save(newProduct);
+      return res.status(201).json(savedProduct);
     } catch (error) {
-      console.error('Error creating product:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category with ID')) {
-          return res.status(404).json({ error: error.message });
-        }
-        if (error.message.includes('Product name') || 
-            error.message.includes('Product price') ||
-            error.message.includes('Product stock')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error creating product:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -109,36 +124,48 @@ export class ProductController {
   updateProduct = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { name, description, price, imageUrl, categoryId, stock } = req.body;
-      
-      const updatedProduct = await this.productUseCase.updateProduct(Number(id), {
-        name,
-        description,
-        price: price ? parseFloat(price) : undefined,
-        imageUrl,
-        categoryId: categoryId ? Number(categoryId) : undefined,
-        stock: stock !== undefined ? Number(stock) : undefined
+      const { name, description, price, imageUrl, categoryId, stock } =
+        req.body;
+
+      const dataSource = await getDataSource();
+      const productRepository = dataSource.getRepository(ProductEntity);
+
+      const existingProduct = await productRepository.findOne({
+        where: { id: Number(id) },
       });
-      
-      if (!updatedProduct) {
-        return res.status(404).json({ error: 'Product not found' });
+
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Product not found" });
       }
-      
+
+      // Check if category exists if it's being updated
+      if (categoryId !== undefined) {
+        const categoryRepository = dataSource.getRepository(CategoryEntity);
+        const category = await categoryRepository.findOne({
+          where: { id: Number(categoryId) },
+        });
+
+        if (!category) {
+          return res
+            .status(404)
+            .json({ error: `Category with ID ${categoryId} not found` });
+        }
+      }
+
+      // Update fields
+      if (name !== undefined) existingProduct.name = name;
+      if (description !== undefined) existingProduct.description = description;
+      if (price !== undefined) existingProduct.price = parseFloat(price);
+      if (imageUrl !== undefined) existingProduct.imageUrl = imageUrl;
+      if (categoryId !== undefined)
+        existingProduct.categoryId = Number(categoryId);
+      if (stock !== undefined) existingProduct.stock = Number(stock);
+
+      const updatedProduct = await productRepository.save(existingProduct);
       return res.status(200).json(updatedProduct);
     } catch (error) {
-      console.error('Error updating product:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category with ID')) {
-          return res.status(404).json({ error: error.message });
-        }
-        if (error.message.includes('Product name') || error.message.includes('Product price')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error updating product:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -148,17 +175,23 @@ export class ProductController {
   deleteProduct = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      
-      const deleted = await this.productUseCase.deleteProduct(Number(id));
-      
-      if (!deleted) {
-        return res.status(404).json({ error: 'Product not found' });
+
+      const dataSource = await getDataSource();
+      const productRepository = dataSource.getRepository(ProductEntity);
+
+      const existingProduct = await productRepository.findOne({
+        where: { id: Number(id) },
+      });
+
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Product not found" });
       }
-      
+
+      await productRepository.remove(existingProduct);
       return res.status(204).send();
     } catch (error) {
-      console.error('Error deleting product:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error deleting product:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 }

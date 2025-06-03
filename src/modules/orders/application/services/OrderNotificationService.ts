@@ -6,17 +6,19 @@ export class OrderNotificationService {
 
   async notifyOrderReady(orderId: string): Promise<void> {
     const order = await this.orderRepository.findById(orderId);
-    
+
     if (!order) {
       throw new Error("Order not found");
     }
 
     // Here you can implement the notification logic
     // For example, send an email, SMS, or push notification
-    console.log(`Notifying customer ${order.customerId} that order ${orderId} is ready`);
-    
+    console.log(
+      `Notifying customer ${order.customerId} that order ${orderId} is ready`
+    );
+
     // Update order status
-    order.status = "READY_FOR_PICKUP";
+    order.status = "COMPLETED";
     await this.orderRepository.save(order);
   }
-} 
+}

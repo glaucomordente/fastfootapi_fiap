@@ -1,29 +1,26 @@
-import { Request, Response } from 'express';
-import { CategoryUseCase } from '../../../domain/ports/in/CategoryUseCase';
+import { Request, Response } from "express";
+import { getDataSource } from "../../../../../lib/typeorm";
+import { CategoryEntity } from "../../out/persistence/entities/Category.entity";
 
 /**
  * CategoryController
- * 
+ *
  * This controller serves as an input adapter for the web interface.
  * It translates HTTP requests into calls to the CategoryUseCase (input port).
  */
 export class CategoryController {
-  private categoryUseCase: CategoryUseCase;
-
-  constructor(categoryUseCase: CategoryUseCase) {
-    this.categoryUseCase = categoryUseCase;
-  }
-
   /**
    * Get all categories
    */
   getAllCategories = async (req: Request, res: Response) => {
     try {
-      const categories = await this.categoryUseCase.getAllCategories();
+      const dataSource = await getDataSource();
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+      const categories = await categoryRepository.find();
       return res.status(200).json(categories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error fetching categories:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -33,16 +30,21 @@ export class CategoryController {
   getCategoryById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const category = await this.categoryUseCase.getCategoryById(Number(id));
-      
+      const dataSource = await getDataSource();
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+      const category = await categoryRepository.findOne({
+        where: { id: Number(id) },
+        relations: ["products"],
+      });
+
       if (!category) {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({ error: "Category not found" });
       }
-      
+
       return res.status(200).json(category);
     } catch (error) {
-      console.error('Error fetching category:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error fetching category:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -52,28 +54,24 @@ export class CategoryController {
   createCategory = async (req: Request, res: Response) => {
     try {
       const { name, description } = req.body;
-      
+
       if (!name) {
-        return res.status(400).json({ error: 'Name is required' });
+        return res.status(400).json({ error: "Name is required" });
       }
-      
-      const newCategory = await this.categoryUseCase.createCategory({
+
+      const dataSource = await getDataSource();
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+
+      const newCategory = categoryRepository.create({
         name,
-        description
+        description,
       });
-      
-      return res.status(201).json(newCategory);
+
+      const savedCategory = await categoryRepository.save(newCategory);
+      return res.status(201).json(savedCategory);
     } catch (error) {
-      console.error('Error creating category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category name')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error creating category:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -84,28 +82,27 @@ export class CategoryController {
     try {
       const { id } = req.params;
       const { name, description } = req.body;
-      
-      const updatedCategory = await this.categoryUseCase.updateCategory(Number(id), {
-        name,
-        description
+
+      const dataSource = await getDataSource();
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+
+      const existingCategory = await categoryRepository.findOne({
+        where: { id: Number(id) },
       });
-      
-      if (!updatedCategory) {
-        return res.status(404).json({ error: 'Category not found' });
+
+      if (!existingCategory) {
+        return res.status(404).json({ error: "Category not found" });
       }
-      
+
+      // Update fields
+      if (name !== undefined) existingCategory.name = name;
+      if (description !== undefined) existingCategory.description = description;
+
+      const updatedCategory = await categoryRepository.save(existingCategory);
       return res.status(200).json(updatedCategory);
     } catch (error) {
-      console.error('Error updating category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Category name')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error updating category:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 
@@ -115,25 +112,23 @@ export class CategoryController {
   deleteCategory = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      
-      const deleted = await this.categoryUseCase.deleteCategory(Number(id));
-      
-      if (!deleted) {
-        return res.status(404).json({ error: 'Category not found' });
+
+      const dataSource = await getDataSource();
+      const categoryRepository = dataSource.getRepository(CategoryEntity);
+
+      const existingCategory = await categoryRepository.findOne({
+        where: { id: Number(id) },
+      });
+
+      if (!existingCategory) {
+        return res.status(404).json({ error: "Category not found" });
       }
-      
+
+      await categoryRepository.remove(existingCategory);
       return res.status(204).send();
     } catch (error) {
-      console.error('Error deleting category:', error);
-      
-      // Handle specific domain errors
-      if (error instanceof Error) {
-        if (error.message.includes('Cannot delete category with associated products')) {
-          return res.status(400).json({ error: error.message });
-        }
-      }
-      
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error("Error deleting category:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 }
