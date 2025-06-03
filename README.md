@@ -38,10 +38,12 @@ src/
 ### Camadas da Arquitetura
 
 1. **Domain (Domínio)**
+
    - Contém as entidades de negócio e regras de domínio
    - Define as interfaces (portas) para interagir com o domínio
 
 2. **Application (Aplicação)**
+
    - Implementa os casos de uso da aplicação
    - Orquestra as entidades de domínio para realizar operações de negócio
 
@@ -72,22 +74,79 @@ Ao iniciar a aplicação, os seguintes dados são automaticamente criados no ban
 ### Produtos
 
 **Lanches:**
+
 - Hambúrguer Clássico - R$ 18,90
 - Cheeseburger Duplo - R$ 24,90
 
 **Bebidas:**
+
 - Refrigerante Cola - R$ 5,90
 - Suco de Laranja - R$ 7,90
 
 **Acompanhamentos:**
+
 - Batata Frita - R$ 9,90
 - Onion Rings - R$ 11,90
 
 **Sobremesas:**
+
 - Sundae de Chocolate - R$ 8,90
 - Milkshake de Morango - R$ 12,90
 
 Cada produto já possui um estoque inicial e campos de data de criação e atualização.
+
+## Fluxo de Status dos Pedidos
+
+O sistema possui um fluxo lógico de status para os pedidos, garantindo que cada etapa seja executada na ordem correta:
+
+1. **PENDING** (Pendente)
+
+   - Status inicial quando o pedido é criado
+   - O pedido está aguardando finalização para pagamento
+
+2. **PAYMENT** (Pagamento)
+
+   - O pedido foi finalizado e está aguardando confirmação do pagamento
+   - Neste momento o cliente deve realizar o pagamento
+
+3. **COMPLETED** (Concluído)
+
+   - O pagamento foi confirmado
+   - O pedido está pronto para iniciar o preparo
+
+4. **PREPARING** (Em Preparo)
+
+   - O pedido está sendo preparado pela cozinha
+   - Só pode ser iniciado após confirmação do pagamento
+
+5. **READY_TO_PICKUP** (Pronto para Retirada)
+
+   - O pedido foi finalizado e está pronto para ser retirado pelo cliente
+   - Só pode ser marcado quando o pedido estiver em preparo
+
+6. **DELIVERED** (Entregue)
+
+   - O pedido foi entregue ou retirado pelo cliente
+   - Só pode ser confirmado quando o pedido estiver pronto para retirada
+
+7. **CANCELLED** (Cancelado)
+   - O pedido foi cancelado
+   - Pode ser aplicado em qualquer status exceto DELIVERED
+
+### Transições de Status
+
+O fluxo completo de um pedido segue a seguinte sequência:
+
+```
+PENDING → PAYMENT → COMPLETED → PREPARING → READY_TO_PICKUP → DELIVERED
+```
+
+Cada transição de status possui validações específicas para garantir a integridade do processo:
+
+- Um pedido só pode ser preparado após confirmação do pagamento
+- Um pedido só pode ser marcado como pronto para retirada quando estiver em preparo
+- Um pedido só pode ser confirmado como entregue quando estiver pronto para retirada
+- Um pedido pode ser cancelado em qualquer momento, exceto quando já estiver entregue
 
 ## Configuração e Execução
 
