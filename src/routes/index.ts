@@ -10,7 +10,6 @@ import { getDataSource } from "../lib/typeorm";
 import { OrderNotificationController } from "../modules/orders/adapters/in/web/OrderNotificationController";
 import { OrderNotificationService } from "../modules/orders/application/services/OrderNotificationService";
 import { TypeORMOrderRepository } from "../modules/orders/adapters/out/persistence/TypeORMOrderRepository";
-import { PaymentController } from "../controllers antigo/PaymentController";
 // import { validationMiddleware } from "../lib/validation.pipe";
 
 /**
